@@ -186,7 +186,7 @@ function findSkillDirs(dir, depth = 0, acc = []) {
   return acc;
 }
 
-const ACRONYMS = { mcp: 'MCP', api: 'API', pdf: 'PDF', ui: 'UI', ux: 'UX', hf: 'HF', cli: 'CLI', seo: 'SEO', ai: 'AI', llm: 'LLM', sdk: 'SDK', gpu: 'GPU', css: 'CSS', html: 'HTML', md: 'MD', gif: 'GIF', imessage: 'iMessage', github: 'GitHub', vat: 'VAT', rtl: 'RTL', ocr: 'OCR', nlp: 'NLP', wcag: 'WCAG', tdd: 'TDD' };
+const ACRONYMS = { mcp: 'MCP', api: 'API', pdf: 'PDF', ui: 'UI', ux: 'UX', hf: 'HF', cli: 'CLI', seo: 'SEO', ai: 'AI', llm: 'LLM', sdk: 'SDK', gpu: 'GPU', css: 'CSS', html: 'HTML', md: 'MD', gif: 'GIF', imessage: 'iMessage', github: 'GitHub', doordash: 'DoorDash', ubereats: 'Uber Eats', youtube: 'YouTube', linkedin: 'LinkedIn', seo: 'SEO', tiktok: 'TikTok', instacart: 'Instacart', vat: 'VAT', rtl: 'RTL', ocr: 'OCR', nlp: 'NLP', wcag: 'WCAG', tdd: 'TDD' };
 const US_STATES = new Set('al ak az ar ca co ct de fl ga hi id il in ia ks ky la me md ma mi mn ms mo mt ne nv nh nj nm ny nc nd oh ok or pa ri sc sd tn tx ut vt va wa wv wi wy dc'.split(' '));
 function humanize(name) {
   // "form-1040-es" → "Form 1040-ES", "az-consumer-debt" → "AZ Consumer Debt"
