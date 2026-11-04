@@ -89,23 +89,30 @@
       }).sort(sorters[sort.value] || sorters.updated);
       const frag = document.createDocumentFragment();
       const used = new Set();
+      shown.forEach((c, i) => { if (i >= limit) c.hidden = true; });
       shown.forEach((c, i) => {
         c.classList.add('in'); frag.append(c);
-        const ad = (i + 1) % every === 0 && ads[(i + 1) / every - 1];
+        const ad = i < limit && (i + 1) % every === 0 && ads[(i + 1) / every - 1];
         if (ad) { frag.append(ad); used.add(ad); }
       });
       cards.filter(c => c.hidden).forEach(c => frag.append(c));
       ads.forEach(a => { a.hidden = !used.has(a); });
       grid.append(frag);
       $('[data-count-out]').textContent = `${shown.length.toLocaleString()} skill${shown.length === 1 ? '' : 's'}`;
+      more.hidden = shown.length <= limit;
       $('[data-empty]').hidden = shown.length > 0;
       const p = new URLSearchParams();
       if (q.value) p.set('q', q.value); if (cat.value) p.set('category', cat.value); if (coll.value) p.set('collection', coll.value);
       if (agent.value) p.set('agent', agent.value); if (sort.value !== 'updated') p.set('sort', sort.value);
       history.replaceState(null, '', `${location.pathname}${p.toString() ? `?${p}` : ''}`);
     };
-    let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(apply, 120); });
-    [cat, coll, agent, sort].forEach(el => el.addEventListener('change', apply));
+    const PAGE = 48;
+    let limit = PAGE;
+    const more = $('[data-more]');
+    more.addEventListener('click', () => { limit += PAGE; apply(); });
+    const reset = () => { limit = PAGE; apply(); };
+    let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(reset, 120); });
+    [cat, coll, agent, sort].forEach(el => el.addEventListener('change', reset));
     apply();
   }
 

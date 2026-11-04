@@ -189,6 +189,8 @@ ${ad('footer', 'wrap')}
 const crumbs = items => `<nav class="crumbs mono" aria-label="Breadcrumb">${items.map(([h, l], i) => i === items.length - 1 ? `<span>${esc(l)}</span>` : `<a href="${u(h)}">${esc(l)}</a>`).join('<i>/</i>')}</nav>`;
 const pageHead = (kicker, title, lede) => `<header class="phead wrap"><p class="kicker mono">${kicker}</p><h1>${title}</h1>${lede ? `<p class="lede">${lede}</p>` : ''}</header>`;
 
+const DISCLAIMERS = { 'tax-and-finance': 'tax', 'legal-tech': 'legal', 'health-services': 'medical', investing: 'financial or investment', accounting: 'accounting' };
+
 // ---------- pages ----------
 const FAQ = [
   ['What is a skill?', 'A skill is a folder with a <code>SKILL.md</code> file: instructions, plus optional scripts and reference files, that teach an AI agent how to do one job well. The agent reads the short description, and loads the full instructions only when your request matches.'],
@@ -208,12 +210,12 @@ function home() {
   <div class="hero__copy">
     <p class="kicker mono reveal"><span class="pulse"></span> ${n(skills.length)} open-source skills · refreshed <time data-ago="${generatedAt}">${ago(generatedAt)}</time></p>
     <h1 class="reveal" style="--d:60ms">Teach your AI <em>new tricks.</em></h1>
-    <p class="lede reveal" style="--d:120ms">Skills are like apps for your AI assistant. Each one teaches it a new job, from filing taxes to designing slides to debugging code. Ready to install, scanned for risks, and free.</p>
+    <p class="lede reveal" style="--d:120ms">Skills are like apps for your AI assistant. Each one teaches it a new job, from IRS forms and court filings to ad campaigns and code reviews. Ready to install, scanned for risks, and free.</p>
     <form class="hero__search reveal" style="--d:180ms" action="${u('/skills/')}" role="search">
-      <input name="q" type="search" placeholder="Try “invoice”, “seo”, “pdf”, “testing”…" aria-label="Search skills">
+      <input name="q" type="search" placeholder="Try “1099”, “LLC”, “small claims”, “SEO”…" aria-label="Search skills">
       <button class="btn btn--accent">Find skills</button>
     </form>
-    <div class="hero__chips reveal" style="--d:240ms">${['documents-data', 'developer-tools', 'tax-and-finance', 'marketing-growth', 'design-creative', 'ai-ml'].filter(c => byCat[c]?.length).map(c => `<a class="chip" href="${u(`/categories/${c}/`)}">${CATS[c].glyph} ${esc(CATS[c].label)}</a>`).join('')}<a class="chip chip--ghost" href="${u('/get-started/')}">New here? Start →</a></div>
+    <div class="hero__chips reveal" style="--d:240ms">${['tax-and-finance', 'legal-tech', 'investing', 'marketing-growth', 'developer-tools', 'health-services'].filter(c => byCat[c]?.length).map(c => `<a class="chip" href="${u(`/categories/${c}/`)}">${CATS[c].glyph} ${esc(CATS[c].label)}</a>`).join('')}<a class="chip chip--ghost" href="${u('/get-started/')}">New here? Start →</a></div>
   </div>
   <div class="hero__stack" aria-hidden="true">
     ${mix(trusted).slice(0, 3).map((s, i) => `<div class="float float--${i}">${card(s)}</div>`).join('')}
@@ -324,6 +326,7 @@ function skillsIndex() {
   </div>
   <p class="mono count" data-count-out>${n(skills.length)} skills</p>
   ${grid(recent, { feedAds: true })}
+  <p class="center"><button class="btn btn--ghost" data-more hidden>Show more skills</button></p>
   <p class="empty" data-empty hidden>No skills match. Try fewer words, or <a href="${u('/submit/')}">suggest one</a>.</p>
 </section>`;
   return layout({ title: 'All skills', path: '/skills/', body, description: `Browse ${skills.length} open-source AI agent skills for Claude, Codex, Cursor, Copilot and more.` });
@@ -377,6 +380,8 @@ function skillPage(s) {
       ${s.tags.length ? `<div class="tags">${s.tags.map(t => `<a class="chip" href="${u(`/skills/?q=${encodeURIComponent(t)}`)}">#${esc(t)}</a>`).join('')}</div>` : ''}
       <div class="row"><a class="btn btn--accent" href="#install">Install</a><a class="btn btn--ghost" href="${u(`/zips/${s.slug}.zip`)}" download>⤓ ZIP</a><a class="btn btn--ghost" href="${esc(s.sourceUrl)}" rel="nofollow noopener" target="_blank">View on GitHub ↗</a><button class="btn btn--ghost" data-share>Share</button></div>
     </header>
+
+    ${DISCLAIMERS[s.category] ? `<p class="disclaimer"><b>Not ${DISCLAIMERS[s.category]} advice.</b> This skill helps your AI draft and organize. Laws, rates and rules change, so verify the output with official sources or a licensed ${DISCLAIMERS[s.category] === 'medical' ? 'clinician' : DISCLAIMERS[s.category] === 'legal' ? 'attorney' : 'professional'} before you rely on it.</p>` : ''}
 
     ${installBlock(s)}
 
@@ -694,7 +699,8 @@ fs.mkdirSync(path.join(DIST, 'bundles'), { recursive: true });
 for (const s of skills) {
   const dir = path.join(stage, s.slug, s.id);
   fs.mkdirSync(path.dirname(dir), { recursive: true });
-  fs.cpSync(path.join(ROOT, s.cacheDir), dir, { recursive: true, filter: src => !/(SKILL_[A-Z]{2}\.md|optimization-log\.json)$/.test(src) });
+  fs.cpSync(path.join(ROOT, s.cacheDir), dir, { recursive: true, filter: src => !/(SKILL_[A-Z]{2}\.md|optimization-log\.json|\/\.git)$/.test(src) });
+  if (s.repoLicenseFile) fs.copyFileSync(path.join(ROOT, s.repoLicenseFile), path.join(dir, 'LICENSE'));
   execFileSync('zip', ['-qr', path.join(DIST, 'zips', `${s.slug}.zip`), s.id], { cwd: path.join(stage, s.slug) });
 }
 for (const b of bundles) {

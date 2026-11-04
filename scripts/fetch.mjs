@@ -13,13 +13,22 @@ const { sources } = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources.json'), 
 const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'));
 
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || tryGhToken();
-const OPEN_LICENSES = /^(MIT|Apache-2\.0|BSD-[23]-Clause|ISC|MPL-2\.0|CC-BY-4\.0|CC0-1\.0|Unlicense|0BSD)$/i;
+const OPEN_LICENSES = /^(MIT|Apache-2\.0|BSD-[23]-Clause|ISC|MPL-2\.0|CC-BY-4\.0|CC0-1\.0|Unlicense|0BSD|A?GPL-3\.0(-only|-or-later)?)$/i;
 
 function tryGhToken() {
   try { return execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim(); } catch { return ''; }
 }
 
-async function gh(url, { raw = false } = {}) {
+async function retry(fn, tries = 4) {
+  for (let i = 1; ; i++) {
+    try { return await fn(); }
+    catch (e) { if (i >= tries || /^(404|451)\b/.test(e.message)) throw e; await new Promise(r => setTimeout(r, 1500 * i)); }
+  }
+}
+
+function gh(url, opts) { return retry(() => ghOnce(url, opts)); }
+
+async function ghOnce(url, { raw = false } = {}) {
   const res = await fetch(url.startsWith('http') ? url : `https://api.github.com/${url}`, {
     headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'skillshelf-indexer', ...(TOKEN && { Authorization: `Bearer ${TOKEN}` }) },
   });
@@ -43,13 +52,18 @@ function detectLicenseText(text) {
   if (/BSD 3-Clause|Redistribution and use in source and binary forms/i.test(text)) return 'BSD-3-Clause';
   if (/ISC License/i.test(text)) return 'ISC';
   if (/Mozilla Public License,? v(ersion)? ?2\.0/i.test(text)) return 'MPL-2.0';
+  if (/GNU AFFERO GENERAL PUBLIC LICENSE\s+Version 3/i.test(text)) return 'AGPL-3.0';
+  if (/GNU GENERAL PUBLIC LICENSE\s+Version 3/i.test(text)) return 'GPL-3.0';
   return null;
 }
 
-function resolveLicense(front, skillDir, repoLicense) {
+function resolveLicense(front, skillDir, repoLicense, repoDir) {
   const declared = String(front.license || '').trim();
   if (/proprietary|all rights reserved|source-available/i.test(declared)) return null;
   if (OPEN_LICENSES.test(declared)) return declared.toUpperCase() === 'MIT' ? 'MIT' : declared;
+  // A declared license we don't recognize (custom, dual, "source-available"...) is never assumed open,
+  // unless it only points at a LICENSE file shipped with the skill.
+  if (declared && !/LICENSE(\.txt|\.md)?\b/.test(declared)) return null;
   for (const f of ['LICENSE', 'LICENSE.txt', 'LICENSE.md']) {
     const p = path.join(skillDir, f);
     if (fs.existsSync(p)) {
@@ -60,6 +74,15 @@ function resolveLicense(front, skillDir, repoLicense) {
     }
   }
   if (repoLicense && OPEN_LICENSES.test(repoLicense)) return repoLicense;
+  // GitHub reports "Other" for standard licenses with an appended disclaimer; read the text ourselves.
+  for (const f of ['LICENSE', 'LICENSE.txt', 'LICENSE.md']) {
+    const p = path.join(repoDir, f);
+    if (fs.existsSync(p)) {
+      const text = fs.readFileSync(p, 'utf8');
+      if (/proprietary|all rights reserved|non-commercial|noncommercial/i.test(text)) return null;
+      return detectLicenseText(text);
+    }
+  }
   return null;
 }
 
@@ -155,17 +178,24 @@ function parseSkillMd(file) {
 
 function findSkillDirs(dir, depth = 0, acc = []) {
   if (depth > 5) return acc;
-  if (fs.existsSync(path.join(dir, 'SKILL.md'))) { acc.push(dir); return acc; }
+  if (fs.existsSync(path.join(dir, 'SKILL.md'))) acc.push(dir);
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!e.isDirectory() || e.name.startsWith('.') || ['node_modules', 'template', 'templates', 'spec', 'tests', 'examples'].includes(e.name)) continue;
+    if (!e.isDirectory() || e.name.startsWith('.') || ['node_modules', 'template', 'templates', 'spec', 'tests', 'examples', 'references', 'scripts', 'assets'].includes(e.name)) continue;
     findSkillDirs(path.join(dir, e.name), depth + 1, acc);
   }
   return acc;
 }
 
 const ACRONYMS = { mcp: 'MCP', api: 'API', pdf: 'PDF', ui: 'UI', ux: 'UX', hf: 'HF', cli: 'CLI', seo: 'SEO', ai: 'AI', llm: 'LLM', sdk: 'SDK', gpu: 'GPU', css: 'CSS', html: 'HTML', md: 'MD', gif: 'GIF', imessage: 'iMessage', github: 'GitHub', vat: 'VAT', rtl: 'RTL', ocr: 'OCR', nlp: 'NLP', wcag: 'WCAG', tdd: 'TDD' };
+const US_STATES = new Set('al ak az ar ca co ct de fl ga hi id il in ia ks ky la me md ma mi mn ms mo mt ne nv nh nj nm ny nc nd oh ok or pa ri sc sd tn tx ut vt va wa wv wi wy dc'.split(' '));
 function humanize(name) {
-  return name.split(/[-_\s]+/).map(w => ACRONYMS[w.toLowerCase()] || w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // "form-1040-es" → "Form 1040-ES", "az-consumer-debt" → "AZ Consumer Debt"
+  const joined = name.replace(/(\d{3,4})-([a-z]{1,4})(?=$|[-_])/gi, (_, n, suf) => `${n}~${suf.toUpperCase()}`);
+  return joined.split(/[-_\s]+/).map((w, i) => {
+    const lw = w.toLowerCase();
+    if (i === 0 && w.length === 2 && US_STATES.has(lw)) return w.toUpperCase();
+    return ACRONYMS[lw] || w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(' ').replace(/~/g, '-');
 }
 
 async function indexSource(src) {
@@ -174,25 +204,31 @@ async function indexSource(src) {
   const dest = path.join(CACHE, `${owner}__${name}`);
   fs.rmSync(dest, { recursive: true, force: true });
   fs.mkdirSync(dest, { recursive: true });
-  const tgz = await gh(`repos/${src.repo}/tarball/${repo.default_branch}`, { raw: true });
-  const tgzPath = `${dest}.tgz`;
-  fs.writeFileSync(tgzPath, tgz);
-  execFileSync('tar', ['-xzf', tgzPath, '-C', dest, '--strip-components=1']);
-  fs.rmSync(tgzPath);
+  // Blobless clone: full files at HEAD plus enough history for per-skill changelogs, no API calls per skill.
+  const auth = TOKEN ? ['-c', `http.extraHeader=Authorization: Basic ${Buffer.from(`x-access-token:${TOKEN}`).toString('base64')}`] : [];
+  await retry(async () => { fs.rmSync(dest, { recursive: true, force: true }); execFileSync('git', [...auth, 'clone', '-q', '--filter=blob:none', '--depth=400', '--single-branch', '--branch', repo.default_branch, `https://github.com/${src.repo}.git`, dest], { stdio: 'pipe' }); });
+  const repoLicenseFile = ['LICENSE', 'LICENSE.txt', 'LICENSE.md', 'COPYING'].find(f => fs.existsSync(path.join(dest, f)));
 
   const skills = [];
+  const seenBodies = new Set();
   let skipped = 0;
-  for (const dir of findSkillDirs(dest)) {
+  const dirs = findSkillDirs(dest);
+  for (const dir of dirs) {
     const relPath = path.relative(dest, dir);
+    if (!relPath && dirs.length > 1) continue; // a repo-level index skill; the real skills are below it
     const { front, body } = parseSkillMd(path.join(dir, 'SKILL.md'));
-    const license = resolveLicense(front, dir, repo.license?.spdx_id);
+    const license = resolveLicense(front, dir, repo.license?.spdx_id, dest);
     if (!license) { skipped++; continue; }
     let meta = {};
     const metaFile = path.join(dir, 'metadata.json');
     if (fs.existsSync(metaFile)) { try { meta = JSON.parse(fs.readFileSync(metaFile, 'utf8')); } catch {} }
     const id = String(front.name || path.basename(dir)).trim();
+    if (src.exclude?.includes(id)) continue;
     const description = String(meta.display_description?.en || front.description || '').trim();
-    if (!description) { skipped++; continue; }
+    if (!description || /^(moved to|deprecated|this skill (has )?moved)/i.test(description)) { skipped++; continue; }
+    const bodyKey = `${id}\n${body.trim()}`;
+    if (seenBodies.has(bodyKey)) continue; // same skill copied into several plugins
+    seenBodies.add(bodyKey);
     const files = walk(dir).filter(f => !/(^|\/)(SKILL_[A-Z]{2}\.md|optimization-log\.json)$/.test(f.rel));
     const category =
       src.categories?.[id] || src.category || meta.category ||
@@ -224,25 +260,23 @@ async function indexSource(src) {
       findings: scan(dir, files),
       body,
       cacheDir: path.relative(ROOT, dir),
+      repoLicenseFile: repoLicenseFile && !files.some(f => /^(LICENSE|COPYING)/i.test(f.rel)) ? path.relative(ROOT, path.join(dest, repoLicenseFile)) : null,
+      history: gitHistory(dest, relPath, repo.html_url),
     });
   }
   console.log(`  ${src.repo}: ${skills.length} skills${skipped ? `, ${skipped} skipped (license/description)` : ''}`);
   return { repo, skills };
 }
 
-// Per-skill commit history → changelog + accurate "updated" dates.
-async function attachHistory(skill) {
+// Per-skill commit history from the local clone → changelog + accurate "updated" dates.
+function gitHistory(repoDir, relPath, htmlUrl) {
   try {
-    const commits = await gh(`repos/${skill.repo}/commits?path=${encodeURIComponent(skill.path)}&sha=${skill.branch}&per_page=8`);
-    skill.history = commits.map(c => ({
-      sha: c.sha.slice(0, 7),
-      date: c.commit.author.date,
-      message: c.commit.message.split('\n')[0].slice(0, 160),
-      url: c.html_url,
-    }));
-    if (skill.history.length) skill.updatedAt = skill.history[0].date;
-    if (skill.history.length && skill.history.length < 8) skill.addedAt = skill.history.at(-1).date;
-  } catch { skill.history = []; }
+    const out = execFileSync('git', ['-C', repoDir, 'log', '-n', '8', '--format=%H%x09%aI%x09%s', '--', relPath || '.'], { encoding: 'utf8' });
+    return out.trim().split('\n').filter(Boolean).map(l => {
+      const [sha, date, ...msg] = l.split('\t');
+      return { sha: sha.slice(0, 7), date, message: msg.join(' ').slice(0, 160), url: `${htmlUrl}/commit/${sha}` };
+    });
+  } catch { return []; }
 }
 
 async function fetchMcp() {
@@ -299,11 +333,11 @@ async function main() {
     s.slug = slug;
   }
 
-  if (TOKEN) {
-    console.log(`Fetching history for ${all.length} skills…`);
-    await pool(all, 8, attachHistory);
+  for (const s of all) {
+    if (s.history.length) s.updatedAt = s.history[0].date;
+    if (s.history.length && s.history.length < 8) s.addedAt = s.history.at(-1).date;
+    s.trust = trustScore(s);
   }
-  for (const s of all) Object.assign(s, { trust: trustScore(s) });
 
   let mcp = [];
   try { mcp = await fetchMcp(); console.log(`MCP registry: ${mcp.length} servers`); }

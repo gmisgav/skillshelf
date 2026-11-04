@@ -224,6 +224,8 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 6px;
 .skill__meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--ink-3); }
 .skill__meta a { color: var(--ink); }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.disclaimer { margin: 24px 0 0; padding: 14px 18px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--card)); border-radius: 0 12px 12px 0; font-size: .92rem; color: var(--ink-2); }
+.disclaimer b { color: var(--ink); }
 .install, .doc, .files, .history { margin-top: 30px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); padding: 26px; }
 .install h2, .doc h2, .files h2, .history h2 { font-size: 2rem; margin-bottom: 16px; }
 .files h2 span { color: var(--ink-3); font-size: .8rem; margin-left: 8px; }

@@ -1,20 +1,19 @@
 {
-  "_doc": "Every repo listed here is re-indexed on each scheduled build. Only skills with an open license (MIT, Apache-2.0, BSD, ISC, MPL, CC-BY) are published. 'categoryFromRepo' uses the repo name as the category; 'category' forces one; 'categories' maps skill names to categories.",
+  "_doc": "Every repo listed here is re-indexed on each scheduled build. Only skills with an open license (MIT, Apache-2.0, BSD, ISC, MPL, AGPL/GPL, CC-BY) are published; source-available or proprietary skills are skipped. 'category' forces a category; 'categories' maps skill names to categories; otherwise it is inferred. 'exclude' skips skills by name.",
   "sources": [
-    { "repo": "skills-il/tax-and-finance",       "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/accounting",            "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/government-services",   "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/legal-tech",            "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/localization",          "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/communication",         "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/marketing-growth",      "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/health-services",       "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/food-and-dining",       "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/developer-tools",       "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/security-compliance",   "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/education",             "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/travel",                "categoryFromRepo": true, "collection": "Skills IL" },
-    { "repo": "skills-il/design-systems",        "category": "design-creative", "collection": "Skills IL" },
+    { "repo": "jupid-tax/jupid-skills",                 "category": "tax-and-finance",  "collection": "Jupid IRS Forms" },
+    { "repo": "filedcom/opentax",                       "category": "tax-and-finance",  "collection": "OpenTax", "exclude": ["install", "save-skill"] },
+    { "repo": "anthropics/claude-for-legal",            "category": "legal-tech",       "collection": "Claude for Legal" },
+    { "repo": "codearranger/claude-legal",              "category": "legal-tech",       "collection": "US Court Docs" },
+    { "repo": "anthropics/financial-services-plugins",  "category": "investing",        "collection": "Claude Financial Services" },
+    { "repo": "JoelLewis/finance_skills",               "category": "investing",        "collection": "Wealth & Advisory" },
+    { "repo": "tradermonty/claude-trading-skills",      "category": "investing",        "collection": "Trading Skills" },
+    { "repo": "coreyhaines31/marketingskills",          "category": "marketing-growth", "collection": "Marketing Skills" },
+    { "repo": "sergebulaev/linkedin-skills",            "category": "marketing-growth", "collection": "LinkedIn Skills" },
+    { "repo": "phuryn/pm-skills",                       "category": "product-business", "collection": "PM Skills" },
+    { "repo": "tuanductran/hr-skills",                  "category": "hr-careers",       "collection": "HR Skills" },
+    { "repo": "Open-Medica/open-medical-skills",        "category": "health-services",  "collection": "Open Medical Skills" },
+    { "repo": "cloudflare/security-audit-skill",        "category": "security-compliance", "collection": "Cloudflare" },
 
     { "repo": "anthropics/skills", "collection": "Anthropic", "categories": {
       "algorithmic-art": "design-creative", "brand-guidelines": "design-creative", "canvas-design": "design-creative",
@@ -23,8 +22,12 @@
       "web-artifacts-builder": "developer-tools", "skill-creator": "workflow",
       "internal-comms": "communication", "doc-coauthoring": "documents-data"
     } },
-    { "repo": "obra/superpowers",               "category": "workflow",  "collection": "Superpowers" },
-    { "repo": "huggingface/skills",             "category": "ai-ml",     "collection": "Hugging Face" },
-    { "repo": "anthropics/claude-plugins-official", "collection": "Claude Plugins" }
+    { "repo": "obra/superpowers",                       "category": "workflow",         "collection": "Superpowers" },
+    { "repo": "addyosmani/agent-skills",                "category": "developer-tools",  "collection": "Addy Osmani" },
+    { "repo": "huggingface/skills",                     "category": "ai-ml",            "collection": "Hugging Face" },
+    { "repo": "anthropics/claude-plugins-official",                                     "collection": "Claude Plugins" },
+    { "repo": "kepano/obsidian-skills",                 "category": "documents-data",   "collection": "Obsidian" },
+    { "repo": "blader/humanizer",                       "category": "communication",    "collection": "Humanizer" },
+    { "repo": "mvanhorn/last30days-skill",              "category": "workflow",         "collection": "Last 30 Days" }
   ]
 }

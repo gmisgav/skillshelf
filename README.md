@@ -1,7 +1,7 @@
 # SkillShelf
 
 An auto-updating, ad-supported directory of open-source AI agent skills (SKILL.md) and MCP servers.
-It works like agentskills.co.il, but in English and for a global audience. It indexes Skills IL's MIT-licensed skills plus Anthropic, Superpowers, Hugging Face and Claude Plugins.
+US-first: IRS tax forms, US legal and court filings, finance & investing, marketing, HR and product skills, plus general agent skills from Anthropic, Superpowers, Hugging Face and more.
 
 ## How it works
 
