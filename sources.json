@@ -1,0 +1,30 @@
+{
+  "_doc": "Every repo listed here is re-indexed on each scheduled build. Only skills with an open license (MIT, Apache-2.0, BSD, ISC, MPL, CC-BY) are published. 'categoryFromRepo' uses the repo name as the category; 'category' forces one; 'categories' maps skill names to categories.",
+  "sources": [
+    { "repo": "skills-il/tax-and-finance",       "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/accounting",            "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/government-services",   "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/legal-tech",            "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/localization",          "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/communication",         "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/marketing-growth",      "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/health-services",       "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/food-and-dining",       "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/developer-tools",       "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/security-compliance",   "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/education",             "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/travel",                "categoryFromRepo": true, "collection": "Skills IL" },
+    { "repo": "skills-il/design-systems",        "category": "design-creative", "collection": "Skills IL" },
+
+    { "repo": "anthropics/skills", "collection": "Anthropic", "categories": {
+      "algorithmic-art": "design-creative", "brand-guidelines": "design-creative", "canvas-design": "design-creative",
+      "theme-factory": "design-creative", "slack-gif-creator": "design-creative", "frontend-design": "design-creative",
+      "claude-api": "developer-tools", "mcp-builder": "developer-tools", "webapp-testing": "developer-tools",
+      "web-artifacts-builder": "developer-tools", "skill-creator": "workflow",
+      "internal-comms": "communication", "doc-coauthoring": "documents-data"
+    } },
+    { "repo": "obra/superpowers",               "category": "workflow",  "collection": "Superpowers" },
+    { "repo": "huggingface/skills",             "category": "ai-ml",     "collection": "Hugging Face" },
+    { "repo": "anthropics/claude-plugins-official", "collection": "Claude Plugins" }
+  ]
+}

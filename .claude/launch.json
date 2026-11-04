@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "skillshelf", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "4321", "-d", "dist"], "port": 4321 }
+  ]
+}
