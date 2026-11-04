@@ -186,7 +186,11 @@ function findSkillDirs(dir, depth = 0, acc = []) {
   return acc;
 }
 
-const ACRONYMS = { mcp: 'MCP', api: 'API', pdf: 'PDF', ui: 'UI', ux: 'UX', hf: 'HF', cli: 'CLI', seo: 'SEO', ai: 'AI', llm: 'LLM', sdk: 'SDK', gpu: 'GPU', css: 'CSS', html: 'HTML', md: 'MD', gif: 'GIF', imessage: 'iMessage', github: 'GitHub', doordash: 'DoorDash', ubereats: 'Uber Eats', youtube: 'YouTube', linkedin: 'LinkedIn', seo: 'SEO', tiktok: 'TikTok', instacart: 'Instacart', vat: 'VAT', rtl: 'RTL', ocr: 'OCR', nlp: 'NLP', wcag: 'WCAG', tdd: 'TDD' };
+const ACRONYMS = { mcp: 'MCP', api: 'API', pdf: 'PDF', ui: 'UI', ux: 'UX', hf: 'HF', cli: 'CLI', seo: 'SEO', ai: 'AI', llm: 'LLM', sdk: 'SDK', gpu: 'GPU', css: 'CSS', html: 'HTML', md: 'MD', gif: 'GIF', imessage: 'iMessage', github: 'GitHub', doordash: 'DoorDash', ubereats: 'Uber Eats', youtube: 'YouTube', linkedin: 'LinkedIn', seo: 'SEO', tiktok: 'TikTok', instacart: 'Instacart', vat: 'VAT', rtl: 'RTL', ocr: 'OCR', nlp: 'NLP', wcag: 'WCAG', tdd: 'TDD',
+  // Business, finance, legal, health and government acronyms common in US skill names.
+  hr: 'HR', hris: 'HRIS', pm: 'PM', prd: 'PRD', gtm: 'GTM', ab: 'A/B', cro: 'CRO', crm: 'CRM', kpi: 'KPI', okr: 'OKR', roi: 'ROI', erp: 'ERP', rfp: 'RFP', saas: 'SaaS', b2b: 'B2B', b2c: 'B2C', ugc: 'UGC', ppc: 'PPC', utm: 'UTM', cta: 'CTA', ltv: 'LTV', cac: 'CAC', mrr: 'MRR', nps: 'NPS', icp: 'ICP', dtc: 'DTC', faq: 'FAQ', cms: 'CMS', pr: 'PR', qa: 'QA', ar: 'AR', vr: 'VR', uiux: 'UI/UX',
+  irs: 'IRS', cpa: 'CPA', ein: 'EIN', llc: 'LLC', sec: 'SEC', etf: 'ETF', ipo: 'IPO', esg: 'ESG', kyc: 'KYC', aml: 'AML', dcf: 'DCF', lbo: 'LBO', fpa: 'FP&A', gaap: 'GAAP', ifrs: 'IFRS', hsa: 'HSA', ira: 'IRA', w2: 'W-2', nda: 'NDA', msa: 'MSA', gdpr: 'GDPR', ccpa: 'CCPA', hipaa: 'HIPAA', ada: 'ADA', fmla: 'FMLA', flsa: 'FLSA', eeoc: 'EEOC', erisa: 'ERISA', osha: 'OSHA', ftc: 'FTC', fcc: 'FCC', epa: 'EPA', dmv: 'DMV', uscis: 'USCIS', fda: 'FDA', cpt: 'CPT', icd: 'ICD', ehr: 'EHR', emr: 'EMR', pii: 'PII', soc: 'SOC', nist: 'NIST', owasp: 'OWASP', cve: 'CVE', mfa: 'MFA', sso: 'SSO', oauth: 'OAuth', jwt: 'JWT', dns: 'DNS', ssl: 'SSL', url: 'URL', http: 'HTTP',
+  sql: 'SQL', json: 'JSON', yaml: 'YAML', csv: 'CSV', xls: 'XLS', xlsx: 'XLSX', ppt: 'PPT', pptx: 'PPTX', docx: 'DOCX', sms: 'SMS', aws: 'AWS', gcp: 'GCP', iot: 'IoT', ci: 'CI', cd: 'CD', ios: 'iOS', rag: 'RAG', lora: 'LoRA', ml: 'ML', huggingface: 'Hugging Face', openai: 'OpenAI', chatgpt: 'ChatGPT' };
 const US_STATES = new Set('al ak az ar ca co ct de fl ga hi id il in ia ks ky la me md ma mi mn ms mo mt ne nv nh nj nm ny nc nd oh ok or pa ri sc sd tn tx ut vt va wa wv wi wy dc'.split(' '));
 function humanize(name) {
   // "form-1040-es" → "Form 1040-ES", "az-consumer-debt" → "AZ Consumer Debt"
@@ -194,6 +198,7 @@ function humanize(name) {
   return joined.split(/[-_\s]+/).map((w, i) => {
     const lw = w.toLowerCase();
     if (i === 0 && w.length === 2 && US_STATES.has(lw)) return w.toUpperCase();
+    if (i === 0 && lw === 'us') return 'US';
     return ACRONYMS[lw] || w.charAt(0).toUpperCase() + w.slice(1);
   }).join(' ').replace(/~/g, '-');
 }
