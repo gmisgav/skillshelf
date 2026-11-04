@@ -6,7 +6,6 @@
   "basePath": "/skillshelf",
   "repo": "gmisgav/skillshelf",
   "contactEmail": "hello@skillshelf.example.com",
-
   "ads": {
     "enabled": true,
     "adsenseClient": "ca-pub-0000000000000000",
@@ -19,49 +18,188 @@
     },
     "inFeedEvery": 9
   },
-
   "analytics": {
     "plausibleDomain": "",
     "gaMeasurementId": ""
   },
-
   "newsletter": {
     "formAction": "",
     "note": "Paste a Buttondown / Beehiiv / Mailchimp form action URL to enable the signup form."
   },
-
   "categories": {
-    "developer-tools":     { "label": "Developer Tools",      "glyph": "</>", "blurb": "Code, testing, CI, APIs and the build loop." },
-    "design-creative":     { "label": "Design & Creative",    "glyph": "✦",   "blurb": "Art, brand, UI and visual generation." },
-    "documents-data":      { "label": "Documents & Data",     "glyph": "▤",   "blurb": "Files, spreadsheets, PDFs and data science." },
-    "workflow":            { "label": "Agent Workflow",       "glyph": "↻",   "blurb": "Planning, debugging and disciplined agent habits." },
-    "ai-ml":               { "label": "AI & ML",              "glyph": "◎",   "blurb": "Models, datasets, training and inference." },
-    "communication":       { "label": "Communication",        "glyph": "✉",   "blurb": "Email, chat, comms and messaging." },
-    "marketing-growth":    { "label": "Marketing & Growth",   "glyph": "↗",   "blurb": "SEO, content, social and acquisition." },
-    "tax-and-finance":     { "label": "US Taxes & IRS",       "glyph": "¤",   "blurb": "IRS forms, filing, deductions and small-business tax." },
-    "investing":           { "label": "Finance & Investing",  "glyph": "$",   "blurb": "Modeling, equity research, wealth management and trading." },
-    "product-business":    { "label": "Product & Business",   "glyph": "◇",   "blurb": "Strategy, roadmaps, discovery and go-to-market." },
-    "hr-careers":          { "label": "HR & Careers",         "glyph": "☺",   "blurb": "Hiring, people ops, resumes and interviews." },
-    "accounting":          { "label": "Accounting",           "glyph": "Σ",   "blurb": "Bookkeeping, ledgers and reports." },
-    "legal-tech":          { "label": "Legal",                "glyph": "§",   "blurb": "Contracts, court filings, compliance and legal research." },
-    "government-services": { "label": "Government Services",  "glyph": "⌂",   "blurb": "Forms, permits and public services." },
-    "health-services":     { "label": "Health & Medicine",    "glyph": "+",   "blurb": "Clinical reference, medical education and care." },
-    "security-compliance": { "label": "Security & Compliance","glyph": "⛨",   "blurb": "Privacy, security audits and standards." },
-    "localization":        { "label": "Localization",         "glyph": "あ",  "blurb": "Languages, RTL, i18n and regional content." },
-    "education":           { "label": "Education",            "glyph": "✎",   "blurb": "Learning, tutoring and courses." },
-    "food-and-dining":     { "label": "Food & Dining",        "glyph": "◐",   "blurb": "Recipes, groceries and restaurants." },
-    "travel":              { "label": "Travel",               "glyph": "✈",   "blurb": "Trips, flights and planning." },
-    "other":               { "label": "Everything Else",      "glyph": "∗",   "blurb": "Useful skills that defy a label." }
+    "tax-and-finance": {
+      "label": "US Taxes & IRS",
+      "glyph": "¤",
+      "blurb": "IRS forms, filing, deductions and small-business tax."
+    },
+    "legal-tech": {
+      "label": "Legal",
+      "glyph": "§",
+      "blurb": "Contracts, court filings, compliance and legal research."
+    },
+    "investing": {
+      "label": "Finance & Investing",
+      "glyph": "$",
+      "blurb": "Modeling, equity research, wealth management and trading."
+    },
+    "marketing-growth": {
+      "label": "Marketing & Growth",
+      "glyph": "↗",
+      "blurb": "SEO, content, social and acquisition."
+    },
+    "product-business": {
+      "label": "Product & Business",
+      "glyph": "◇",
+      "blurb": "Strategy, roadmaps, discovery and go-to-market."
+    },
+    "hr-careers": {
+      "label": "HR & Careers",
+      "glyph": "☺",
+      "blurb": "Hiring, people ops, resumes and interviews."
+    },
+    "health-services": {
+      "label": "Health & Medicine",
+      "glyph": "+",
+      "blurb": "Clinical reference, medical education and care."
+    },
+    "accounting": {
+      "label": "Accounting",
+      "glyph": "Σ",
+      "blurb": "Bookkeeping, ledgers and reports."
+    },
+    "government-services": {
+      "label": "Government Services",
+      "glyph": "⌂",
+      "blurb": "Forms, permits and public services."
+    },
+    "security-compliance": {
+      "label": "Security & Compliance",
+      "glyph": "⛨",
+      "blurb": "Privacy, security audits and standards."
+    },
+    "developer-tools": {
+      "label": "Developer Tools",
+      "glyph": "</>",
+      "blurb": "Code, testing, CI, APIs and the build loop."
+    },
+    "design-creative": {
+      "label": "Design & Creative",
+      "glyph": "✦",
+      "blurb": "Art, brand, UI and visual generation."
+    },
+    "documents-data": {
+      "label": "Documents & Data",
+      "glyph": "▤",
+      "blurb": "Files, spreadsheets, PDFs and data science."
+    },
+    "workflow": {
+      "label": "Agent Workflow",
+      "glyph": "↻",
+      "blurb": "Planning, debugging and disciplined agent habits."
+    },
+    "ai-ml": {
+      "label": "AI & ML",
+      "glyph": "◎",
+      "blurb": "Models, datasets, training and inference."
+    },
+    "communication": {
+      "label": "Communication",
+      "glyph": "✉",
+      "blurb": "Email, chat, comms and messaging."
+    },
+    "localization": {
+      "label": "Localization",
+      "glyph": "あ",
+      "blurb": "Languages, RTL, i18n and regional content."
+    },
+    "education": {
+      "label": "Education",
+      "glyph": "✎",
+      "blurb": "Learning, tutoring and courses."
+    },
+    "food-and-dining": {
+      "label": "Food & Dining",
+      "glyph": "◐",
+      "blurb": "Recipes, groceries and restaurants."
+    },
+    "travel": {
+      "label": "Travel",
+      "glyph": "✈",
+      "blurb": "Trips, flights and planning."
+    },
+    "other": {
+      "label": "Everything Else",
+      "glyph": "∗",
+      "blurb": "Useful skills that defy a label."
+    }
   },
-
   "agents": [
-    { "id": "claude-ai",      "name": "Claude.ai",      "kind": "zip",  "steps": ["Download the ZIP below.", "Open Claude.ai → Settings → Capabilities → Skills.", "Click \"Upload skill\" and choose the ZIP.", "Start a new chat. Claude loads the skill automatically when it's relevant."] },
-    { "id": "claude-desktop", "name": "Claude Desktop", "kind": "zip",  "steps": ["Download the ZIP below.", "Open Claude Desktop → Customize → Skills.", "Click \"+\" → \"Upload a skill\" and choose the ZIP.", "Start a new conversation. The skill activates when relevant."] },
-    { "id": "claude-code",    "name": "Claude Code",    "kind": "cli",  "dir": "~/.claude/skills", "projectDir": ".claude/skills" },
-    { "id": "codex",          "name": "Codex CLI",      "kind": "cli",  "dir": "~/.codex/skills",  "projectDir": ".codex/skills" },
-    { "id": "github-copilot", "name": "GitHub Copilot", "kind": "cli",  "dir": "~/.copilot/skills", "projectDir": ".github/skills" },
-    { "id": "cursor",         "name": "Cursor",         "kind": "cli",  "dir": "~/.cursor/skills", "projectDir": ".cursor/skills" },
-    { "id": "gemini-cli",     "name": "Gemini CLI",     "kind": "cli",  "dir": "~/.gemini/skills", "projectDir": ".gemini/skills" },
-    { "id": "chatgpt",        "name": "ChatGPT",        "kind": "paste", "steps": ["Open the skill instructions below and copy them.", "In ChatGPT, create a Project (or a custom GPT) and paste them into its instructions.", "Upload any files from the skill's references folder as project files."] }
+    {
+      "id": "claude-ai",
+      "name": "Claude.ai",
+      "kind": "zip",
+      "steps": [
+        "Download the ZIP below.",
+        "Open Claude.ai → Settings → Capabilities → Skills.",
+        "Click \"Upload skill\" and choose the ZIP.",
+        "Start a new chat. Claude loads the skill automatically when it's relevant."
+      ]
+    },
+    {
+      "id": "claude-desktop",
+      "name": "Claude Desktop",
+      "kind": "zip",
+      "steps": [
+        "Download the ZIP below.",
+        "Open Claude Desktop → Customize → Skills.",
+        "Click \"+\" → \"Upload a skill\" and choose the ZIP.",
+        "Start a new conversation. The skill activates when relevant."
+      ]
+    },
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "kind": "cli",
+      "dir": "~/.claude/skills",
+      "projectDir": ".claude/skills"
+    },
+    {
+      "id": "codex",
+      "name": "Codex CLI",
+      "kind": "cli",
+      "dir": "~/.codex/skills",
+      "projectDir": ".codex/skills"
+    },
+    {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "kind": "cli",
+      "dir": "~/.copilot/skills",
+      "projectDir": ".github/skills"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "kind": "cli",
+      "dir": "~/.cursor/skills",
+      "projectDir": ".cursor/skills"
+    },
+    {
+      "id": "gemini-cli",
+      "name": "Gemini CLI",
+      "kind": "cli",
+      "dir": "~/.gemini/skills",
+      "projectDir": ".gemini/skills"
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "kind": "paste",
+      "steps": [
+        "Open the skill instructions below and copy them.",
+        "In ChatGPT, create a Project (or a custom GPT) and paste them into its instructions.",
+        "Upload any files from the skill's references folder as project files."
+      ]
+    }
   ]
 }

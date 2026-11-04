@@ -218,7 +218,7 @@ function home() {
     <div class="hero__chips reveal" style="--d:240ms">${['tax-and-finance', 'legal-tech', 'investing', 'marketing-growth', 'developer-tools', 'health-services'].filter(c => byCat[c]?.length).map(c => `<a class="chip" href="${u(`/categories/${c}/`)}">${CATS[c].glyph} ${esc(CATS[c].label)}</a>`).join('')}<a class="chip chip--ghost" href="${u('/get-started/')}">New here? Start →</a></div>
   </div>
   <div class="hero__stack" aria-hidden="true">
-    ${mix(trusted).slice(0, 3).map((s, i) => `<div class="float float--${i}">${card(s)}</div>`).join('')}
+    ${['tax-and-finance', 'legal-tech', 'investing'].map(c => [...(byCat[c] || [])].sort((a, b) => b.trust.score - a.trust.score)[0]).filter(Boolean).map((s, i) => `<div class="float float--${i}">${card(s)}</div>`).join('')}
   </div>
 </section>
 
@@ -245,7 +245,7 @@ ${ad('header', 'wrap')}
 
 <section class="wrap section">
   <div class="section__head"><h2>Fresh off <em>the press</em></h2><a class="more" href="${u('/skills/?sort=updated')}">Recently updated →</a></div>
-  ${grid(mix(recent).slice(0, 8))}
+  ${grid(mix(recent.filter(s => ['tax-and-finance', 'legal-tech', 'investing', 'marketing-growth', 'product-business', 'hr-careers', 'health-services'].includes(s.category))).slice(0, 8))}
 </section>
 
 ${ad('inArticle', 'wrap')}
