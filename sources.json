@@ -1,33 +1,259 @@
 {
-  "_doc": "Every repo listed here is re-indexed on each scheduled build. Only skills with an open license (MIT, Apache-2.0, BSD, ISC, MPL, AGPL/GPL, CC-BY) are published; source-available or proprietary skills are skipped. 'category' forces a category; 'categories' maps skill names to categories; otherwise it is inferred. 'exclude' skips skills by name.",
+  "_doc": "Every repo listed here is re-indexed on each scheduled build. Only skills with an open license (MIT, Apache-2.0, BSD, ISC, MPL, AGPL/GPL, CC-BY) are published; source-available or proprietary skills are skipped. 'category' forces a category; 'categories' maps skill names to categories; otherwise it is inferred. 'exclude' skips skills by name; 'include' keeps only the named skills.",
   "sources": [
-    { "repo": "jupid-tax/jupid-skills",                 "category": "tax-and-finance",  "collection": "Jupid IRS Forms" },
-    { "repo": "filedcom/opentax",                       "category": "tax-and-finance",  "collection": "OpenTax", "exclude": ["install", "save-skill"] },
-    { "repo": "anthropics/claude-for-legal",            "category": "legal-tech",       "collection": "Claude for Legal" },
-    { "repo": "codearranger/claude-legal",              "category": "legal-tech",       "collection": "US Court Docs" },
-    { "repo": "anthropics/financial-services-plugins",  "category": "investing",        "collection": "Claude Financial Services" },
-    { "repo": "JoelLewis/finance_skills",               "category": "investing",        "collection": "Wealth & Advisory" },
-    { "repo": "tradermonty/claude-trading-skills",      "category": "investing",        "collection": "Trading Skills" },
-    { "repo": "coreyhaines31/marketingskills",          "category": "marketing-growth", "collection": "Marketing Skills" },
-    { "repo": "sergebulaev/linkedin-skills",            "category": "marketing-growth", "collection": "LinkedIn Skills" },
-    { "repo": "phuryn/pm-skills",                       "category": "product-business", "collection": "PM Skills" },
-    { "repo": "tuanductran/hr-skills",                  "category": "hr-careers",       "collection": "HR Skills" },
-    { "repo": "Open-Medica/open-medical-skills",        "category": "health-services",  "collection": "Open Medical Skills" },
-    { "repo": "cloudflare/security-audit-skill",        "category": "security-compliance", "collection": "Cloudflare" },
-
-    { "repo": "anthropics/skills", "collection": "Anthropic", "categories": {
-      "algorithmic-art": "design-creative", "brand-guidelines": "design-creative", "canvas-design": "design-creative",
-      "theme-factory": "design-creative", "slack-gif-creator": "design-creative", "frontend-design": "design-creative",
-      "claude-api": "developer-tools", "mcp-builder": "developer-tools", "webapp-testing": "developer-tools",
-      "web-artifacts-builder": "developer-tools", "skill-creator": "workflow",
-      "internal-comms": "communication", "doc-coauthoring": "documents-data"
-    } },
-    { "repo": "obra/superpowers",                       "category": "workflow",         "collection": "Superpowers" },
-    { "repo": "addyosmani/agent-skills",                "category": "developer-tools",  "collection": "Addy Osmani" },
-    { "repo": "huggingface/skills",                     "category": "ai-ml",            "collection": "Hugging Face" },
-    { "repo": "anthropics/claude-plugins-official",                                     "collection": "Claude Plugins" },
-    { "repo": "kepano/obsidian-skills",                 "category": "documents-data",   "collection": "Obsidian" },
-    { "repo": "blader/humanizer",                       "category": "communication",    "collection": "Humanizer" },
-    { "repo": "mvanhorn/last30days-skill",              "category": "workflow",         "collection": "Last 30 Days" }
+    {
+      "repo": "jupid-tax/jupid-skills",
+      "category": "tax-and-finance",
+      "collection": "Jupid IRS Forms"
+    },
+    {
+      "repo": "filedcom/opentax",
+      "category": "tax-and-finance",
+      "collection": "OpenTax",
+      "exclude": [
+        "install",
+        "save-skill"
+      ]
+    },
+    {
+      "repo": "anthropics/claude-for-legal",
+      "category": "legal-tech",
+      "collection": "Claude for Legal"
+    },
+    {
+      "repo": "codearranger/claude-legal",
+      "category": "legal-tech",
+      "collection": "US Court Docs"
+    },
+    {
+      "repo": "anthropics/financial-services-plugins",
+      "category": "investing",
+      "collection": "Claude Financial Services"
+    },
+    {
+      "repo": "JoelLewis/finance_skills",
+      "category": "investing",
+      "collection": "Wealth & Advisory"
+    },
+    {
+      "repo": "tradermonty/claude-trading-skills",
+      "category": "investing",
+      "collection": "Trading Skills"
+    },
+    {
+      "repo": "coreyhaines31/marketingskills",
+      "category": "marketing-growth",
+      "collection": "Marketing Skills"
+    },
+    {
+      "repo": "sergebulaev/linkedin-skills",
+      "category": "marketing-growth",
+      "collection": "LinkedIn Skills"
+    },
+    {
+      "repo": "indranilbanerjee/digital-marketing-pro",
+      "category": "marketing-growth",
+      "collection": "Digital Marketing Pro"
+    },
+    {
+      "repo": "Jakeschincariol/youtube-agent-skill",
+      "category": "marketing-growth",
+      "collection": "YouTube Agent"
+    },
+    {
+      "repo": "Jakeschincariol/instagram-agent-skill",
+      "category": "marketing-growth",
+      "collection": "Instagram Agent"
+    },
+    {
+      "repo": "phuryn/pm-skills",
+      "category": "product-business",
+      "collection": "PM Skills"
+    },
+    {
+      "repo": "tuanductran/hr-skills",
+      "category": "hr-careers",
+      "collection": "HR Skills"
+    },
+    {
+      "repo": "Open-Medica/open-medical-skills",
+      "category": "health-services",
+      "collection": "Open Medical Skills"
+    },
+    {
+      "repo": "cooklang/cooklang-skills",
+      "category": "food-and-dining",
+      "collection": "Cooklang Recipes"
+    },
+    {
+      "repo": "davila7/claude-code-templates",
+      "category": "food-and-dining",
+      "collection": "DoorDash Skills",
+      "include": [
+        "doordash-allergy-shield",
+        "doordash-group-orders",
+        "doordash-order-ledger",
+        "doordash-order-playbooks",
+        "doordash-spend-guard"
+      ]
+    },
+    {
+      "repo": "Waleeeeed88/instacart-for-agents",
+      "category": "food-and-dining",
+      "collection": "Instacart for Agents",
+      "exclude": [
+        "instacart-phone-otp-login"
+      ]
+    },
+    {
+      "repo": "imoonkey/openweb",
+      "category": "food-and-dining",
+      "collection": "OpenWeb Shopping",
+      "include": [
+        "costco",
+        "doordash",
+        "instacart",
+        "target",
+        "ubereats",
+        "walmart"
+      ]
+    },
+    {
+      "repo": "browser-act/skills",
+      "category": "food-and-dining",
+      "collection": "Walmart Research",
+      "include": [
+        "walmart-category-listing",
+        "walmart-keyword-search",
+        "walmart-product-detail",
+        "walmart-product-reviews"
+      ]
+    },
+    {
+      "repo": "clawic/skills",
+      "category": "food-and-dining",
+      "collection": "Clawic Food",
+      "include": [
+        "cooking",
+        "dietitian",
+        "food-delivery",
+        "food",
+        "grocery",
+        "instacart",
+        "meal-planner",
+        "meals",
+        "nutrition",
+        "nutritionist",
+        "recipe",
+        "restaurants"
+      ]
+    },
+    {
+      "repo": "zubair-trabzada/ai-restaurant-claude",
+      "category": "food-and-dining",
+      "collection": "Restaurant Owner Toolkit"
+    },
+    {
+      "repo": "cloudflare/security-audit-skill",
+      "category": "security-compliance",
+      "collection": "Cloudflare"
+    },
+    {
+      "repo": "anthropics/skills",
+      "collection": "Anthropic",
+      "categories": {
+        "algorithmic-art": "design-creative",
+        "brand-guidelines": "design-creative",
+        "canvas-design": "design-creative",
+        "theme-factory": "design-creative",
+        "slack-gif-creator": "design-creative",
+        "frontend-design": "design-creative",
+        "claude-api": "developer-tools",
+        "mcp-builder": "developer-tools",
+        "webapp-testing": "developer-tools",
+        "web-artifacts-builder": "developer-tools",
+        "skill-creator": "workflow",
+        "internal-comms": "communication",
+        "doc-coauthoring": "documents-data"
+      }
+    },
+    {
+      "repo": "obra/superpowers",
+      "category": "workflow",
+      "collection": "Superpowers"
+    },
+    {
+      "repo": "addyosmani/agent-skills",
+      "category": "developer-tools",
+      "collection": "Addy Osmani"
+    },
+    {
+      "repo": "huggingface/skills",
+      "category": "ai-ml",
+      "collection": "Hugging Face"
+    },
+    {
+      "repo": "anthropics/claude-plugins-official",
+      "collection": "Claude Plugins"
+    },
+    {
+      "repo": "kepano/obsidian-skills",
+      "category": "documents-data",
+      "collection": "Obsidian"
+    },
+    {
+      "repo": "blader/humanizer",
+      "category": "communication",
+      "collection": "Humanizer"
+    },
+    {
+      "repo": "mvanhorn/last30days-skill",
+      "category": "workflow",
+      "collection": "Last 30 Days"
+    },
+    {
+      "repo": "Leonxlnx/taste-skill",
+      "category": "design-creative",
+      "collection": "Taste"
+    },
+    {
+      "repo": "Nutlope/hallmark",
+      "collection": "Hallmark"
+    },
+    {
+      "repo": "OthmanAdi/planning-with-files",
+      "category": "workflow",
+      "collection": "Planning with Files"
+    },
+    {
+      "repo": "nidhinjs/prompt-master",
+      "category": "workflow",
+      "collection": "Prompt Master"
+    },
+    {
+      "repo": "virgiliojr94/book-to-skill",
+      "category": "workflow",
+      "collection": "Book to Skill"
+    },
+    {
+      "repo": "heydamir/unslop",
+      "category": "communication",
+      "collection": "Unslop"
+    },
+    {
+      "repo": "SawyerHood/dev-browser",
+      "category": "developer-tools",
+      "collection": "Dev Browser"
+    },
+    {
+      "repo": "Egonex-AI/Understand-Anything",
+      "category": "developer-tools",
+      "collection": "Understand Anything"
+    },
+    {
+      "repo": "vercel-labs/skills",
+      "category": "developer-tools",
+      "collection": "Vercel"
+    }
   ]
 }

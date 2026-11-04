@@ -184,3 +184,71 @@
     store.set('agent', b.dataset.pick);
   });
 })();
+
+// "Try this skill" chat
+(() => {
+  const box = document.querySelector('[data-chat]');
+  if (!box) return;
+  const { slug, endpoint, name, raw } = box.dataset;
+  const log = box.querySelector('[data-log]');
+  const form = box.querySelector('[data-form]');
+  const input = form.querySelector('textarea');
+  const btn = form.querySelector('button');
+  const history = [];
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const md = s => esc(s).replace(/```([\s\S]*?)```/g, '<code>$1</code>').replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  const bubble = (cls, text = '') => { const d = document.createElement('div'); d.className = `msg msg--${cls}`; d.innerHTML = md(text); log.append(d); log.scrollTop = log.scrollHeight; return d; };
+
+  input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${input.scrollHeight}px`; });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+  box.querySelectorAll('[data-ask]').forEach(c => c.addEventListener('click', () => { input.value = c.textContent; form.requestSubmit(); }));
+
+  function openInClaude(text) {
+    const prompt = `Act as the AI skill "${name}". Its full instructions are at ${raw}. Read them first and follow them for this conversation.\n\nMy request: ${text}`;
+    window.open(`https://claude.ai/new?q=${encodeURIComponent(prompt)}`, '_blank', 'noopener');
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || btn.disabled) return;
+    input.value = ''; input.style.height = 'auto';
+    if (!endpoint) return openInClaude(text);
+
+    bubble('user', text);
+    history.push({ role: 'user', content: text });
+    const out = bubble('bot'); out.classList.add('typing');
+    btn.disabled = true;
+    let reply = '';
+    try {
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, messages: history.slice(-12) }) });
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'The preview is unavailable right now.');
+      }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split('\n\n'); buf = parts.pop();
+        for (const p of parts) {
+          if (!p.startsWith('data: ')) continue;
+          const ev = JSON.parse(p.slice(6));
+          if (ev.t) { reply += ev.t; out.innerHTML = md(reply); log.scrollTop = log.scrollHeight; }
+          if (ev.error) throw new Error(ev.error);
+        }
+      }
+      history.push({ role: 'assistant', content: reply || '…' });
+    } catch (err) {
+      if (!reply) { out.remove(); history.pop(); }
+      bubble('err', err.message);
+    } finally {
+      out.classList.remove('typing');
+      btn.disabled = false;
+      input.focus();
+    }
+  });
+})();

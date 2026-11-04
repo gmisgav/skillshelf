@@ -191,6 +191,24 @@ const pageHead = (kicker, title, lede) => `<header class="phead wrap"><p class="
 
 const DISCLAIMERS = { 'tax-and-finance': 'tax', 'legal-tech': 'legal', 'health-services': 'medical', investing: 'financial or investment', accounting: 'accounting' };
 
+// "Try this skill" chat: live via the worker when chat.endpoint is set, else hands off to Claude.ai.
+function suggestions(s) {
+  const quoted = [...s.description.matchAll(/["“]([^"”]{8,70})["”]/g)].map(m => m[1]).filter(q => !/[{}<>]/.test(q));
+  const picks = [...new Set(quoted)].slice(0, 3);
+  return picks.length ? picks : ['What can you help me with?', 'Walk me through an example', 'What do you need from me to get started?'];
+}
+function tryBlock(s) {
+  const raw = `https://raw.githubusercontent.com/${s.repo}/${s.branch}/${s.path ? `${s.path}/` : ''}SKILL.md`;
+  return `<section class="try" id="try" data-chat data-slug="${s.slug}" data-endpoint="${esc(cfg.chat?.endpoint || '')}" data-name="${esc(s.name)}" data-raw="${esc(raw)}">
+    <div class="try__head"><div><p class="kicker mono"><span class="pulse"></span> ${cfg.chat?.endpoint ? 'Live preview' : 'Preview in Claude'}</p><h2>Try this skill</h2></div>
+    <p>${cfg.chat?.endpoint ? 'Chat with the skill before you install it.' : 'Ask a question and Claude opens with this skill loaded.'}</p></div>
+    <div class="try__log" data-log aria-live="polite"></div>
+    <div class="try__chips">${suggestions(s).map(q => `<button class="chip" data-ask>${esc(q)}</button>`).join('')}</div>
+    <form class="try__form" data-form><textarea rows="1" placeholder="Ask ${esc(s.name)} anything…" aria-label="Message" maxlength="4000" required></textarea><button class="btn btn--accent">${cfg.chat?.endpoint ? 'Send' : 'Open in Claude ↗'}</button></form>
+    <p class="try__fine mono">${cfg.chat?.endpoint ? 'Preview runs on Claude. Scripts and files are not available here. Don’t share personal data.' : 'Opens claude.ai in a new tab. Requires a free Claude account.'}</p>
+  </section>`;
+}
+
 // ---------- pages ----------
 const FAQ = [
   ['What is a skill?', 'A skill is a folder with a <code>SKILL.md</code> file: instructions, plus optional scripts and reference files, that teach an AI agent how to do one job well. The agent reads the short description, and loads the full instructions only when your request matches.'],
@@ -378,8 +396,10 @@ function skillPage(s) {
         <span>Updated ${fmtDate(s.updatedAt)}</span>
       </div>
       ${s.tags.length ? `<div class="tags">${s.tags.map(t => `<a class="chip" href="${u(`/skills/?q=${encodeURIComponent(t)}`)}">#${esc(t)}</a>`).join('')}</div>` : ''}
-      <div class="row"><a class="btn btn--accent" href="#install">Install</a><a class="btn btn--ghost" href="${u(`/zips/${s.slug}.zip`)}" download>⤓ ZIP</a><a class="btn btn--ghost" href="${esc(s.sourceUrl)}" rel="nofollow noopener" target="_blank">View on GitHub ↗</a><button class="btn btn--ghost" data-share>Share</button></div>
+      <div class="row"><a class="btn btn--accent" href="#try">Try it</a><a class="btn btn--ghost" href="#install">Install</a><a class="btn btn--ghost" href="${u(`/zips/${s.slug}.zip`)}" download>⤓ ZIP</a><a class="btn btn--ghost" href="${esc(s.sourceUrl)}" rel="nofollow noopener" target="_blank">View on GitHub ↗</a><button class="btn btn--ghost" data-share>Share</button></div>
     </header>
+
+    ${tryBlock(s)}
 
     ${DISCLAIMERS[s.category] ? `<p class="disclaimer"><b>Not ${DISCLAIMERS[s.category]} advice.</b> This skill helps your AI draft and organize. Laws, rates and rules change, so verify the output with official sources or a licensed ${DISCLAIMERS[s.category] === 'medical' ? 'clinician' : DISCLAIMERS[s.category] === 'legal' ? 'attorney' : 'professional'} before you rely on it.</p>` : ''}
 
@@ -679,6 +699,7 @@ emit('contact/index.html', simplePage('contact', 'Contact', CONTACT));
 write('404.html', layout({ title: 'Not found', path: '/404', body: `${pageHead('404', 'This shelf is <em>empty.</em>', `The page moved or never existed. <a href="${u('/skills/')}">Browse all skills →</a>`)}` }));
 
 // Search index for the ⌘K palette, and the MCP list.
+for (const s of skills) write(`data/skill/${s.slug}.json`, JSON.stringify({ name: s.name, body: s.body.slice(0, 60000) }));
 write('data/index.json', JSON.stringify(skills.map(s => [s.slug, s.name, s.description.slice(0, 140), CATS[s.category].label, s.tags.join(' ')])));
 write('data/mcp.json', JSON.stringify(mcp.map(m => [m.title, m.name, m.description, m.version, m.website, m.remote, m.packages.map(p => p.type).join(' '), m.packages[0]?.id || ''])));
 

@@ -45,3 +45,21 @@ Add a repo to `sources.json`. Only skills with an open license (MIT, Apache-2.0,
 
 - Review `/privacy/` and `/terms/` (templates) for your jurisdiction.
 - The install folder paths per agent live in `site.config.json → agents`. Update them if a tool changes its skills directory.
+
+## "Try this skill" chat
+
+Every skill page has a **Try this skill** box.
+
+- **Without setup** it opens Claude.ai in a new tab with the skill's instructions linked (no cost to you).
+- **With the chat worker** it becomes a live, streaming chat right on the page. The worker (`worker/`) runs on Cloudflare Workers (free tier). It loads the skill from this site, never from the browser, so it can't be used as an open proxy. It's rate-limited per visitor (8 messages/minute, see `wrangler.toml`) and caps replies at `MAX_OUTPUT_TOKENS`.
+
+Deploy it once:
+
+```bash
+cd worker && npm install
+npx wrangler login                          # free Cloudflare account
+npx wrangler secret put ANTHROPIC_API_KEY   # key from console.anthropic.com
+npx wrangler deploy                         # prints https://skillshelf-chat.<you>.workers.dev
+```
+
+Then put that URL in `site.config.json → chat.endpoint` and push. Set a monthly spend limit in the Anthropic Console. `MODEL` in `wrangler.toml` defaults to `claude-opus-5-5`. Switching it to `claude-haiku-5-5` cuts the cost per message roughly 40×.

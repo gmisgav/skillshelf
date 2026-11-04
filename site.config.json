@@ -42,6 +42,11 @@
       "glyph": "$",
       "blurb": "Modeling, equity research, wealth management and trading."
     },
+    "food-and-dining": {
+      "label": "Food & Groceries",
+      "glyph": "◐",
+      "blurb": "Grocery orders, food delivery, recipes, meal plans and restaurants."
+    },
     "marketing-growth": {
       "label": "Marketing & Growth",
       "glyph": "↗",
@@ -116,11 +121,6 @@
       "label": "Education",
       "glyph": "✎",
       "blurb": "Learning, tutoring and courses."
-    },
-    "food-and-dining": {
-      "label": "Food & Dining",
-      "glyph": "◐",
-      "blurb": "Recipes, groceries and restaurants."
     },
     "travel": {
       "label": "Travel",
@@ -201,5 +201,9 @@
         "Upload any files from the skill's references folder as project files."
       ]
     }
-  ]
+  ],
+  "chat": {
+    "endpoint": "",
+    "note": "URL of the deployed worker/ (e.g. https://skillshelf-chat.<you>.workers.dev). Empty = the 'Try in Claude' fallback."
+  }
 }

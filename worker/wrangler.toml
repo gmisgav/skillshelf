@@ -1,0 +1,19 @@
+name = "skillshelf-chat"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# The published site: skills are loaded from SITE_URL/data/skill/<slug>.json, never from the browser.
+SITE_URL = "https://gmisgav.github.io/skillshelf"
+ALLOWED_ORIGINS = "https://gmisgav.github.io,http://localhost:4321"
+MODEL = "claude-opus-5-5"
+MAX_OUTPUT_TOKENS = "2000"
+
+# 8 messages per visitor per minute. Raise or lower to control spend.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 8, period = 60 }
+
+# Secret (never committed): wrangler secret put ANTHROPIC_API_KEY

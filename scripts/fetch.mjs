@@ -224,6 +224,7 @@ async function indexSource(src) {
     if (fs.existsSync(metaFile)) { try { meta = JSON.parse(fs.readFileSync(metaFile, 'utf8')); } catch {} }
     const id = String(front.name || path.basename(dir)).trim();
     if (src.exclude?.includes(id)) continue;
+    if (src.include && !src.include.includes(id) && !src.include.includes(path.basename(dir))) continue;
     const description = String(meta.display_description?.en || front.description || '').trim();
     if (!description || /^(moved to|deprecated|this skill (has )?moved)/i.test(description)) { skipped++; continue; }
     const bodyKey = `${id}\n${body.trim()}`;
