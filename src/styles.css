@@ -409,3 +409,27 @@ a.bar[href]:hover .bar__t i { background: var(--accent); }
   .bar { grid-template-columns: 100px 1fr 40px; } .install, .doc, .files, .history, .trust { padding: 18px; }
   .section__head { flex-direction: column; align-items: start; }
 }
+
+/* SEO content blocks: at-a-glance facts, ranked top lists, per-page FAQs. */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.glance { margin-top: 26px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); padding: 22px 26px; }
+.glance h2 { font-size: 1.6rem; margin-bottom: 10px; }
+.glance dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.glance dl > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.glance dl > div:first-child { grid-column: 1 / -1; }
+.glance dt { font: 600 .72rem/1.6 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.glance dd { margin: 0; font-size: .95rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.skill-faq { margin-top: 30px; }
+.skill-faq h2 { font-size: 2rem; margin-bottom: 6px; }
+.skill-faq summary { font-size: 1.3rem; }
+.toplist { margin-bottom: 30px; }
+.toplist h2 { font-size: 1.9rem; margin-bottom: 12px; }
+.toplist ol { margin: 0; padding: 0; list-style: none; counter-reset: top; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.toplist li { counter-increment: top; display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.toplist li::before { content: counter(top, decimal-leading-zero); grid-row: 1 / 3; font: 400 1.6rem/1 var(--serif); color: var(--accent); }
+.toplist li a { color: var(--ink); text-decoration: none; } .toplist li a:hover b { text-decoration: underline; }
+.toplist li span { font-size: .9rem; color: var(--ink-3); }
+@media (max-width: 760px) {
+  .glance dl, .toplist ol { grid-template-columns: minmax(0, 1fr); }
+  .glance dl > div { grid-template-columns: 100px minmax(0, 1fr); }
+}

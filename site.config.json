@@ -1,7 +1,7 @@
 {
   "name": "SkillShelf",
   "tagline": "The open library of AI agent skills",
-  "description": "Browse, scan and install hundreds of open-source skills for Claude, ChatGPT, Codex, Cursor, Copilot and every agent that speaks SKILL.md. Updated automatically from GitHub.",
+  "description": "Browse, scan and install over 1,500 free, open-source skills for Claude, ChatGPT, Codex, Cursor, Copilot and every agent that speaks SKILL.md. Updated automatically from GitHub.",
   "siteUrl": "https://gmisgav.github.io",
   "basePath": "/skillshelf",
   "repo": "gmisgav/skillshelf",
@@ -30,42 +30,50 @@
     "tax-and-finance": {
       "label": "US Taxes & IRS",
       "glyph": "¤",
-      "blurb": "IRS forms, filing, deductions and small-business tax."
+      "blurb": "IRS forms, filing, deductions and small-business tax.",
+      "intro": "AI skills that help Claude and ChatGPT with US taxes: IRS forms like the 1040, Schedule C and 1099s, quarterly estimates, deductions, small-business and LLC tax questions. Draft and check, then confirm with the IRS or a CPA."
     },
     "legal-tech": {
       "label": "Legal",
       "glyph": "§",
-      "blurb": "Contracts, court filings, compliance and legal research."
+      "blurb": "Contracts, court filings, compliance and legal research.",
+      "intro": "AI skills for US legal work: contract review, NDAs, court filings, small claims, legal research and compliance checklists. Built to help you prepare, not to replace an attorney."
     },
     "investing": {
       "label": "Finance & Investing",
       "glyph": "$",
-      "blurb": "Modeling, equity research, wealth management and trading."
+      "blurb": "Modeling, equity research, wealth management and trading.",
+      "intro": "AI skills for financial modeling, DCF and LBO models, equity research, portfolio analysis, wealth management and trading research. Use them to speed up analysis, not as investment advice."
     },
     "food-and-dining": {
       "label": "Food & Groceries",
       "glyph": "◐",
-      "blurb": "Grocery orders, food delivery, recipes, meal plans and restaurants."
+      "blurb": "Grocery orders, food delivery, recipes, meal plans and restaurants.",
+      "intro": "AI skills for food: order from DoorDash and Instacart, compare Walmart grocery prices, plan meals, manage allergies, cook from recipes and run a restaurant."
     },
     "marketing-growth": {
       "label": "Marketing & Growth",
       "glyph": "↗",
-      "blurb": "SEO, content, social and acquisition."
+      "blurb": "SEO, content, social and acquisition.",
+      "intro": "AI skills for marketers: SEO, content, copywriting, ad campaigns, LinkedIn, YouTube and Instagram growth, email, CRO and analytics."
     },
     "product-business": {
       "label": "Product & Business",
       "glyph": "◇",
-      "blurb": "Strategy, roadmaps, discovery and go-to-market."
+      "blurb": "Strategy, roadmaps, discovery and go-to-market.",
+      "intro": "AI skills for product managers and founders: PRDs, roadmaps, user research, go-to-market strategy, pricing and competitor analysis."
     },
     "hr-careers": {
       "label": "HR & Careers",
       "glyph": "☺",
-      "blurb": "Hiring, people ops, resumes and interviews."
+      "blurb": "Hiring, people ops, resumes and interviews.",
+      "intro": "AI skills for HR and careers: recruiting, interviews, job descriptions, performance reviews, compensation, compliance, resumes and people analytics."
     },
     "health-services": {
       "label": "Health & Medicine",
       "glyph": "+",
-      "blurb": "Clinical reference, medical education and care."
+      "blurb": "Clinical reference, medical education and care.",
+      "intro": "AI skills for clinical reference, medical coding, drug information, HIPAA and FDA documentation, and medical education. Always verify with a licensed clinician."
     },
     "accounting": {
       "label": "Accounting",
@@ -80,37 +88,44 @@
     "security-compliance": {
       "label": "Security & Compliance",
       "glyph": "⛨",
-      "blurb": "Privacy, security audits and standards."
+      "blurb": "Privacy, security audits and standards.",
+      "intro": "AI skills for security audits, code review for vulnerabilities, privacy and compliance standards."
     },
     "developer-tools": {
       "label": "Developer Tools",
       "glyph": "</>",
-      "blurb": "Code, testing, CI, APIs and the build loop."
+      "blurb": "Code, testing, CI, APIs and the build loop.",
+      "intro": "AI skills for developers: code review, testing, debugging, CI, APIs, frontend design and shipping faster with Claude Code, Codex and Cursor."
     },
     "design-creative": {
       "label": "Design & Creative",
       "glyph": "✦",
-      "blurb": "Art, brand, UI and visual generation."
+      "blurb": "Art, brand, UI and visual generation.",
+      "intro": "AI skills for design: brand guidelines, UI and frontend design, generative art, themes and visual assets."
     },
     "documents-data": {
       "label": "Documents & Data",
       "glyph": "▤",
-      "blurb": "Files, spreadsheets, PDFs and data science."
+      "blurb": "Files, spreadsheets, PDFs and data science.",
+      "intro": "AI skills for documents and data: Word, Excel, PowerPoint and PDF files, spreadsheets, notes and data analysis."
     },
     "workflow": {
       "label": "Agent Workflow",
       "glyph": "↻",
-      "blurb": "Planning, debugging and disciplined agent habits."
+      "blurb": "Planning, debugging and disciplined agent habits.",
+      "intro": "AI skills that make agents work better: planning, debugging, prompt writing, research and disciplined habits."
     },
     "ai-ml": {
       "label": "AI & ML",
       "glyph": "◎",
-      "blurb": "Models, datasets, training and inference."
+      "blurb": "Models, datasets, training and inference.",
+      "intro": "AI skills for machine learning: Hugging Face models and datasets, training, fine-tuning, evaluation and inference."
     },
     "communication": {
       "label": "Communication",
       "glyph": "✉",
-      "blurb": "Email, chat, comms and messaging."
+      "blurb": "Email, chat, comms and messaging.",
+      "intro": "AI skills for writing and communication: emails, internal comms, and making AI text sound human."
     },
     "localization": {
       "label": "Localization",
@@ -130,7 +145,8 @@
     "other": {
       "label": "Everything Else",
       "glyph": "∗",
-      "blurb": "Useful skills that defy a label."
+      "blurb": "Useful skills that defy a label.",
+      "intro": "Useful AI skills that don't fit a single category."
     }
   },
   "agents": [
@@ -205,5 +221,11 @@
   "chat": {
     "endpoint": "",
     "note": "URL of the deployed worker/ (e.g. https://skillshelf-chat.<you>.workers.dev). Empty = the 'Try in Claude' fallback."
+  },
+  "seo": {
+    "googleSiteVerification": "",
+    "bingSiteVerification": "",
+    "indexNowKey": "5f3c9e2b8a7d4e61b0c2f9a8d7e6b5c4",
+    "note": "Paste the content= values from Google Search Console and Bing Webmaster Tools (HTML tag method). indexNowKey is public by design."
   }
 }

@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      full_indexnow:
+        description: "Submit every URL to IndexNow"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -36,6 +41,11 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitemap
+          path: dist/sitemap.xml
+          retention-days: 2
 
   deploy:
     needs: build
@@ -46,3 +56,18 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Ping Bing & co. with the pages that changed, so new skills show up in search (and ChatGPT/Copilot answers) fast.
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sitemap
+          path: dist
+      - run: node scripts/indexnow.mjs
+        env:
+          FULL: ${{ (github.event_name == 'push' || inputs.full_indexnow) && '1' || '0' }}

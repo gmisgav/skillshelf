@@ -98,14 +98,6 @@
       ]
     },
     {
-      "repo": "Waleeeeed88/instacart-for-agents",
-      "category": "food-and-dining",
-      "collection": "Instacart for Agents",
-      "exclude": [
-        "instacart-phone-otp-login"
-      ]
-    },
-    {
       "repo": "imoonkey/openweb",
       "category": "food-and-dining",
       "collection": "OpenWeb Shopping",

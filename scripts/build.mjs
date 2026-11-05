@@ -4,6 +4,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
+import { Resvg } from '@resvg/resvg-js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -22,6 +23,24 @@ const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', d
 const n = x => x.toLocaleString('en-US');
 const catalogNo = i => String(i + 1).padStart(4, '0');
 const plural = (k, w) => `${n(k)} ${w}${k === 1 ? '' : 's'}`;
+const YEAR = new Date(generatedAt).getUTCFullYear();
+const strip = h => String(h).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+// Search snippets: cut at a sentence or word boundary, never mid-word.
+function clip(text, max = 155) {
+  const t = strip(text).replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const sentence = cut.lastIndexOf('. ');
+  return sentence > max * 0.55 ? cut.slice(0, sentence + 1) : `${cut.slice(0, cut.lastIndexOf(' '))}…`;
+}
+// Skill descriptions are written for agents ("Use when the user asks…"); this turns them into a plain summary for people and search engines.
+function summary(s) {
+  const d = s.description.replace(/\s+/g, ' ').trim();
+  const m = d.match(/^use (?:this skill )?(when|whenever|for|to)\b\s*(.*)$/i);
+  if (!m) return d;
+  const rest = m[2].replace(/^the user\b/i, 'you');
+  return `${s.name} helps your AI assistant ${/^to$/i.test(m[1]) ? '' : `${m[1].toLowerCase() === 'for' ? 'with' : 'when'} `}${rest}`;
+}
 const ago = d => {
   const s = (Date.parse(generatedAt) - Date.parse(d)) / 1000;
   if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
@@ -39,6 +58,7 @@ function write(rel, html) {
 skills.sort((a, b) => String(a.addedAt || a.updatedAt).localeCompare(String(b.addedAt || b.updatedAt)) || a.slug.localeCompare(b.slug));
 skills.forEach((s, i) => { s.no = catalogNo(i); });
 const bySlug = new Map(skills.map(s => [s.slug, s]));
+const nameCount = skills.reduce((m, s) => m.set(s.name, (m.get(s.name) || 0) + 1), new Map());
 const byCat = Object.fromEntries(Object.keys(CATS).map(c => [c, skills.filter(s => s.category === c)]));
 const usedCats = Object.keys(CATS).filter(c => byCat[c].length);
 const recent = [...skills].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -72,6 +92,11 @@ function markdownFor(skill) {
       image(t) {
         const src = isRel(t.href) ? new URL(t.href, raw).href : t.href;
         return /^https:/.test(src) ? `<img src="${esc(src)}" alt="${esc(t.text)}" loading="lazy">` : '';
+      },
+      // The page owns the only <h1>; skill headings drop one level.
+      heading(t) {
+        const d = Math.min(t.depth + 1, 6);
+        return `<h${d}>${this.parser.parseInline(t.tokens)}</h${d}>`;
       },
       code(t) {
         return `<div class="code"><button class="copy" data-copy-next aria-label="Copy code">Copy</button><pre><code>${esc(t.text)}</code></pre></div>`;
@@ -120,31 +145,41 @@ const NAV = [
   ['/agents/', 'Agents'], ['/guides/', 'Guides'], ['/stats/', 'Stats'], ['/whats-new/', "What's new"],
 ];
 
-function layout({ title, description = cfg.description, path: p, body, schema, wide = false }) {
-  const fullTitle = title ? `${title} · ${cfg.name}` : `${cfg.name}: ${cfg.tagline}`;
+const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Schibsted+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap';
+
+function layout({ title, fullTitle: ft, description = cfg.description, path: p, body, schema, wide = false, ogImage = '/og.png', ogType = 'website', noindex = false, alternateMd = '' }) {
+  const fullTitle = ft || (title ? `${title} · ${cfg.name}` : `${cfg.name}: ${cfg.tagline}`);
   const a = cfg.analytics;
+  const seo = cfg.seo || {};
+  const desc = clip(description);
+  const schemas = [schema].flat().filter(Boolean).map(x => ({ '@context': 'https://schema.org', ...x }));
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(fullTitle)}</title>
-<meta name="description" content="${esc(description.slice(0, 300))}">
+<meta name="description" content="${esc(desc)}">
+<meta name="robots" content="${noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}">
 <link rel="canonical" href="${abs(p)}">
-<meta property="og:title" content="${esc(fullTitle)}"><meta property="og:description" content="${esc(description.slice(0, 300))}">
-<meta property="og:type" content="website"><meta property="og:url" content="${abs(p)}"><meta property="og:image" content="${abs('/og.svg')}">
-<meta name="twitter:card" content="summary_large_image">
+${seo.googleSiteVerification ? `<meta name="google-site-verification" content="${esc(seo.googleSiteVerification)}">` : ''}${seo.bingSiteVerification ? `<meta name="msvalidate.01" content="${esc(seo.bingSiteVerification)}">` : ''}
+<meta property="og:site_name" content="${esc(cfg.name)}"><meta property="og:locale" content="en_US">
+<meta property="og:title" content="${esc(fullTitle)}"><meta property="og:description" content="${esc(desc)}">
+<meta property="og:type" content="${ogType}"><meta property="og:url" content="${abs(p)}">
+<meta property="og:image" content="${abs(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${esc(title || cfg.name)}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(fullTitle)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${abs(ogImage)}">
+${alternateMd ? `<link rel="alternate" type="text/markdown" href="${abs(alternateMd)}" title="Skill instructions (Markdown)">` : ''}
 <meta name="theme-color" content="#f4efe4" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="${u('/favicon.svg')}" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="${esc(cfg.name)} updates" href="${u('/feed.xml')}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="${FONTS_CSS}" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="${FONTS_CSS}"></noscript>
 <link rel="stylesheet" href="${u(`/assets/styles.css?v=${BUILD}`)}">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 ${adsLive ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${cfg.ads.adsenseClient}" crossorigin="anonymous"></script>` : ''}
 ${a.plausibleDomain ? `<script defer data-domain="${esc(a.plausibleDomain)}" src="https://plausible.io/js/script.js"></script>` : ''}
 ${a.gaMeasurementId ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(a.gaMeasurementId)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${esc(a.gaMeasurementId)}')</script>` : ''}
-${schema ? `<script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>` : ''}
+${schemas.length ? `<script type="application/ld+json">${JSON.stringify(schemas.length === 1 ? schemas[0] : schemas).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body data-base="${BASE}">
 <a class="skip" href="#main">Skip to content</a>
@@ -228,7 +263,7 @@ function home() {
   <div class="hero__copy">
     <p class="kicker mono reveal"><span class="pulse"></span> ${n(skills.length)} open-source skills · refreshed <time data-ago="${generatedAt}">${ago(generatedAt)}</time></p>
     <h1 class="reveal" style="--d:60ms">Teach your AI <em>new tricks.</em></h1>
-    <p class="lede reveal" style="--d:120ms">Skills are like apps for your AI assistant. Each one teaches it a new job, from IRS forms and court filings to ad campaigns and code reviews. Ready to install, scanned for risks, and free.</p>
+    <p class="lede reveal" style="--d:120ms">Free AI skills for Claude, ChatGPT, Codex and Cursor. Skills are like apps for your AI assistant: each one teaches it a new job, from IRS forms and court filings to ad campaigns and grocery orders. Ready to install, scanned for risks, and free.</p>
     <form class="hero__search reveal" style="--d:180ms" action="${u('/skills/')}" role="search">
       <input name="q" type="search" placeholder="Try “1099”, “LLC”, “small claims”, “SEO”…" aria-label="Search skills">
       <button class="btn btn--accent">Find skills</button>
@@ -313,8 +348,12 @@ ${ad('inArticle', 'wrap')}
 </section>`;
   return layout({
     path: '/', body,
+    fullTitle: `${cfg.name}: ${n(skills.length)} Free AI Skills for Claude, ChatGPT & Codex`,
+    description: `The free library of ${n(skills.length)} open-source AI skills for Claude, ChatGPT, Codex, Cursor and Copilot: US taxes, legal, finance, marketing, food ordering and more. Scanned and updated daily.`,
     schema: [
-      { '@context': 'https://schema.org', '@type': 'WebSite', name: cfg.name, url: abs('/'), potentialAction: { '@type': 'SearchAction', target: `${abs('/skills/')}?q={q}`, 'query-input': 'required name=q' } },
+      { '@context': 'https://schema.org', '@type': 'WebSite', name: cfg.name, url: abs('/'), description: cfg.description, inLanguage: 'en-US', publisher: { '@id': abs('/#org') }, potentialAction: { '@type': 'SearchAction', target: `${abs('/skills/')}?q={q}`, 'query-input': 'required name=q' } },
+      { '@type': 'Organization', '@id': abs('/#org'), name: cfg.name, url: abs('/'), logo: abs('/logo.png'), sameAs: [`https://github.com/${cfg.repo}`] },
+      { '@type': 'ItemList', name: 'Skill categories', itemListElement: usedCats.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: CATS[c].label, url: abs(`/categories/${c}/`) })) },
       { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q.replace(/<[^>]+>/g, ''), acceptedAnswer: { '@type': 'Answer', text: a.replace(/<[^>]+>/g, '') } })) },
     ],
   });
@@ -377,8 +416,22 @@ function installBlock(s) {
 
 function skillPage(s) {
   const c = CATS[s.category];
-  const related = [...byCat[s.category].filter(x => x !== s)].sort((a, b) => (b.collection === s.collection) - (a.collection === s.collection) || b.trust.score - a.trust.score).slice(0, 3);
+  const related = [...byCat[s.category].filter(x => x !== s)].sort((a, b) => (b.collection === s.collection) - (a.collection === s.collection) || b.trust.score - a.trust.score).slice(0, 6);
   const realFindings = s.findings.filter(f => f.sev !== 'info');
+  const agents = agentsFor(s);
+  const agentNames = agents.map(a => a.name);
+  const listNames = xs => xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}` : xs[0];
+  const faq = skillFaq(s, c, agentNames, listNames);
+  const glance = [
+    ['What it does', esc(clip(summary(s), 220))],
+    ['Category', `<a href="${u(`/categories/${s.category}/`)}">${esc(c.label)}</a>`],
+    ['Works with', esc(listNames(agentNames))],
+    ['Price', 'Free and open source'],
+    ['License', esc(s.license)],
+    ['Author', `<a href="https://github.com/${esc(s.author)}" rel="nofollow noopener" target="_blank">${esc(s.author)}</a>`],
+    ['Trust score', `${s.trust.score}/100 (${s.trust.level === 'trusted' ? 'trusted' : s.trust.level === 'review' ? 'review before use' : 'use with caution'})`],
+    ['Last updated', `<time datetime="${esc(s.updatedAt)}">${fmtDate(s.updatedAt)}</time>`],
+  ];
   const body = `
 <div class="wrap">${crumbs([['/', 'Home'], ['/skills/', 'Skills'], [`/categories/${s.category}/`, c.label], ['', s.name]])}</div>
 <article class="skill wrap">
@@ -398,6 +451,8 @@ function skillPage(s) {
       ${s.tags.length ? `<div class="tags">${s.tags.map(t => `<a class="chip" href="${u(`/skills/?q=${encodeURIComponent(t)}`)}">#${esc(t)}</a>`).join('')}</div>` : ''}
       <div class="row"><a class="btn btn--accent" href="#try">Try it</a><a class="btn btn--ghost" href="#install">Install</a><a class="btn btn--ghost" href="${u(`/zips/${s.slug}.zip`)}" download>⤓ ZIP</a><a class="btn btn--ghost" href="${esc(s.sourceUrl)}" rel="nofollow noopener" target="_blank">View on GitHub ↗</a><button class="btn btn--ghost" data-share>Share</button></div>
     </header>
+
+    <section class="glance" aria-labelledby="glance-h"><h2 id="glance-h">At a glance</h2><dl>${glance.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></section>
 
     ${tryBlock(s)}
 
@@ -419,6 +474,8 @@ function skillPage(s) {
       <ul class="tree mono">${s.files.slice(0, 60).map(f => `<li><a href="${esc(`${s.repoUrl}/blob/${s.branch}/${s.path}/${f}`)}" rel="nofollow noopener" target="_blank">${esc(f)}</a></li>`).join('')}${s.files.length > 60 ? `<li>… ${s.files.length - 60} more</li>` : ''}</ul>
     </section>
 
+    <section class="faq skill-faq"><h2>${esc(s.name)} <em>FAQ</em></h2>${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${a}</p></details>`).join('')}</section>
+
     ${s.history?.length ? `<section class="history"><h2>Changelog</h2><ol>${s.history.map(h => `<li><time class="mono">${fmtDate(h.date)}</time><a href="${esc(h.url)}" rel="nofollow noopener" target="_blank">${esc(h.message)}</a></li>`).join('')}</ol></section>` : ''}
   </div>
 
@@ -435,15 +492,40 @@ function skillPage(s) {
   </aside>
 </article>
 ${related.length ? `<section class="wrap section"><div class="section__head"><h2>Related <em>skills</em></h2><a class="more" href="${u(`/categories/${s.category}/`)}">More in ${esc(c.label)} →</a></div>${grid(related)}</section>` : ''}`;
+  const pageUrl = abs(`/skills/${s.slug}/`);
   return layout({
-    title: `${s.name}: AI agent skill`, path: `/skills/${s.slug}/`, body, description: s.description,
-    schema: {
-      '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: s.name, description: s.description,
-      applicationCategory: 'DeveloperApplication', operatingSystem: 'Any', license: s.license, softwareVersion: s.version || undefined,
-      author: { '@type': 'Organization', name: s.author }, codeRepository: s.sourceUrl, dateModified: s.updatedAt,
-      offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
-    },
+    fullTitle: `${s.name}${nameCount.get(s.name) > 1 ? ` (${s.collection})` : ''}: Free AI Skill for Claude & ChatGPT · ${cfg.name}`,
+    title: s.name, path: `/skills/${s.slug}/`, body, description: `${summary(s)} Free for ${listNames(agentNames.slice(0, 4))}.`,
+    ogImage: `/og/skills/${s.slug}.png`, ogType: 'article', alternateMd: `/skills/${s.slug}/SKILL.md`,
+    schema: [
+      {
+        '@type': 'SoftwareApplication', '@id': `${pageUrl}#skill`, name: s.name, description: clip(summary(s), 500), url: pageUrl,
+        applicationCategory: 'BusinessApplication', applicationSubCategory: c.label, operatingSystem: 'Claude, ChatGPT, Codex, Cursor, GitHub Copilot, Gemini CLI',
+        license: s.license, softwareVersion: s.version || undefined, keywords: s.tags.join(', ') || undefined,
+        author: { '@type': 'Person', name: s.author, url: `https://github.com/${s.author}` }, sameAs: s.sourceUrl,
+        downloadUrl: abs(`/zips/${s.slug}.zip`), image: abs(`/og/skills/${s.slug}.png`), dateModified: s.updatedAt, datePublished: s.addedAt || undefined,
+        isAccessibleForFree: true, offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+      },
+      breadcrumbs([['/', 'Home'], ['/skills/', 'Skills'], [`/categories/${s.category}/`, c.label], [`/skills/${s.slug}/`, s.name]]),
+      { '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: strip(a) } })) },
+    ],
   });
+}
+
+const breadcrumbs = items => ({ '@type': 'BreadcrumbList', itemListElement: items.map(([h, name], i) => ({ '@type': 'ListItem', position: i + 1, name, item: abs(h) })) });
+
+// Questions people (and AI search engines) ask about a skill, answered from its own metadata.
+function skillFaq(s, c, agentNames, listNames) {
+  const cli = cfg.agents.find(a => a.id === 'claude-code');
+  const scripts = s.hasScripts ? ' It includes scripts, so read them before you let your agent run them.' : ' It contains instructions only, no scripts.';
+  return [
+    [`What does the ${s.name} skill do?`, `${esc(clip(summary(s), 400))}`],
+    [`How do I install ${s.name} in Claude?`, `On Claude.ai or Claude Desktop, download the <a href="${u(`/zips/${s.slug}.zip`)}">ZIP</a>, then go to Settings → Capabilities → Skills and upload it. In Claude Code, unzip it into <code>${esc(cli.dir)}</code> and restart. The <a href="#install">install section</a> has a one-line command for each tool.`],
+    [`Can I use ${s.name} with ChatGPT?`, `Yes. Copy the skill instructions into a ChatGPT Project or custom GPT. It also works with ${esc(listNames(agentNames.filter(x => !/^Claude|ChatGPT/.test(x))))}.`],
+    [`Is ${s.name} free?`, `Yes. It is open source under the ${esc(s.license)} license, by ${esc(s.author)}. ${esc(cfg.name)} never charges for skills.`],
+    [`Is ${s.name} safe?`, `Our automated scan gives it ${s.trust.score}/100 (${s.trust.level}).${scripts} <a href="${u('/security/')}">How we scan</a>.`],
+    [`What are alternatives to ${s.name}?`, `See the related skills below, or browse all ${n(byCat[s.category].length)} <a href="${u(`/categories/${s.category}/`)}">${esc(c.label)} skills</a>.`],
+  ];
 }
 
 function categoriesIndex() {
@@ -453,11 +535,31 @@ function categoriesIndex() {
 }
 
 function categoryPage(c) {
-  const list = [...byCat[c]].sort((a, b) => b.trust.score - a.trust.score);
-  const body = `<div class="wrap">${crumbs([['/', 'Home'], ['/categories/', 'Categories'], ['', CATS[c].label]])}</div>
-${pageHead(`${CATS[c].glyph} ${plural(list.length, 'skill')}`, esc(CATS[c].label), esc(CATS[c].blurb))}
-<section class="wrap"><div class="row"><a class="btn btn--ghost" href="${u(`/bundles/#${c}`)}">⤓ Get the ${esc(CATS[c].label)} starter bundle</a></div>${grid(list, { feedAds: true })}</section>`;
-  return layout({ title: `${CATS[c].label} skills`, path: `/categories/${c}/`, body, description: `${list.length} open-source AI agent skills for ${CATS[c].label.toLowerCase()}: ${CATS[c].blurb}` });
+  const cat = CATS[c];
+  const list = [...byCat[c]].sort((a, b) => b.trust.score - a.trust.score || b.repoStars - a.repoStars);
+  const top = mix(list).slice(0, 10);
+  const label = cat.label;
+  const faq = [
+    [`What are the best ${label} skills for Claude?`, `Our top picks right now: ${top.slice(0, 5).map(s => `<a href="${u(`/skills/${s.slug}/`)}">${esc(s.name)}</a>`).join(', ')}. Rankings use our automated trust score and source popularity, and refresh several times a day.`],
+    [`Are these ${label} skills free?`, `Yes. All ${n(list.length)} are open source and free to download and use.`],
+    [`Do ${label} skills work with ChatGPT?`, `Yes. Paste a skill's instructions into a ChatGPT Project or custom GPT. They also install natively in Claude, Claude Code, Codex CLI, Cursor, GitHub Copilot and Gemini CLI.`],
+    [`How do I install a ${label} skill?`, `Open the skill, download its ZIP and upload it in Claude under Settings → Capabilities → Skills. Developers can use the one-line install command on each skill page. New to skills? <a href="${u('/get-started/')}">Start here</a>.`],
+  ];
+  const body = `<div class="wrap">${crumbs([['/', 'Home'], ['/categories/', 'Categories'], ['', label]])}</div>
+${pageHead(`${cat.glyph} ${plural(list.length, 'skill')} · updated ${fmtDate(generatedAt)}`, `${esc(label)} <em>skills</em>`, esc(cat.intro || cat.blurb))}
+<section class="wrap toplist"><h2>Top ${top.length} ${esc(label)} skills in ${YEAR}</h2><ol>${top.map(s => `<li><a href="${u(`/skills/${s.slug}/`)}"><b>${esc(s.name)}</b></a><span>${esc(clip(summary(s), 140))}</span></li>`).join('')}</ol></section>
+<section class="wrap"><div class="row"><a class="btn btn--ghost" href="${u(`/bundles/#${c}`)}">⤓ Get the ${esc(label)} starter bundle</a></div><h2 class="sr">All ${esc(label)} skills</h2>${grid(list, { feedAds: true })}</section>
+<section class="wrap section faq"><div class="section__head"><h2>${esc(label)} skills <em>FAQ</em></h2></div>${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${a}</p></details>`).join('')}</section>`;
+  return layout({
+    fullTitle: `Best ${label} AI Skills for Claude & ChatGPT (${YEAR}) · ${cfg.name}`,
+    title: `${label} skills`, path: `/categories/${c}/`, body, ogImage: `/og/categories/${c}.png`,
+    description: `${n(list.length)} free ${label} skills for Claude, ChatGPT, Codex and Cursor. ${cat.blurb} Top picks: ${top.slice(0, 3).map(s => s.name).join(', ')}.`,
+    schema: [
+      { '@type': 'CollectionPage', name: `${label} AI skills`, url: abs(`/categories/${c}/`), dateModified: generatedAt, mainEntity: { '@type': 'ItemList', numberOfItems: list.length, itemListElement: top.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: s.name, url: abs(`/skills/${s.slug}/`) })) } },
+      breadcrumbs([['/', 'Home'], ['/categories/', 'Categories'], [`/categories/${c}/`, label]]),
+      { '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: strip(a) } })) },
+    ],
+  });
 }
 
 function collectionsIndex() {
@@ -497,7 +599,18 @@ function agentPage(a) {
   const body = `<div class="wrap">${crumbs([['/', 'Home'], ['/agents/', 'Agents'], ['', a.name]])}</div>
 ${pageHead(`${plural(list.length, 'compatible skill')}`, `Skills for <em>${esc(a.name)}</em>`, `How to install AI skills in ${esc(a.name)}, plus every compatible skill in the library.`)}
 <section class="wrap"><div class="howto">${how}</div>${grid(list.sort((x, y) => y.trust.score - x.trust.score).slice(0, 60), { feedAds: true })}<p class="center"><a class="btn btn--ghost" href="${u(`/skills/?agent=${a.id}`)}">See all ${n(list.length)} →</a></p></section>`;
-  return layout({ title: `${a.name} skills: install guide`, path: `/agents/${a.id}/`, body, description: `Install open-source skills in ${a.name}. Step-by-step guide and ${list.length} compatible skills.` });
+  const steps = a.kind === 'cli'
+    ? [`Create ${a.dir} (or ${a.projectDir} for one project).`, `Download a skill ZIP from ${cfg.name} and unzip it into that folder.`, `Restart ${a.name}. The skill loads when your request matches.`]
+    : a.steps;
+  return layout({
+    fullTitle: `How to Add Skills to ${a.name} (${n(list.length)} Free Skills, ${YEAR}) · ${cfg.name}`,
+    title: `${a.name} skills`, path: `/agents/${a.id}/`, body,
+    description: `Step-by-step: how to install skills in ${a.name}, plus ${n(list.length)} free, open-source skills that work with it.`,
+    schema: [
+      { '@type': 'HowTo', name: `How to install a skill in ${a.name}`, totalTime: 'PT2M', step: steps.map((x, i) => ({ '@type': 'HowToStep', position: i + 1, text: x })) },
+      breadcrumbs([['/', 'Home'], ['/agents/', 'Agents'], [`/agents/${a.id}/`, a.name]]),
+    ],
+  });
 }
 
 function mcpPage() {
@@ -533,7 +646,7 @@ function guidePage(g) {
   <div class="prose">${g.html.replace(/(<\/p>)/, `$1${ad('inArticle')}`)}</div>
   <nav class="next">${guides.filter(x => x !== g).slice(0, 3).map(x => `<a class="coll" href="${u(`/guides/${x.slug}/`)}"><span class="mono">Next guide</span><h3>${esc(x.title)}</h3></a>`).join('')}</nav>
 </article>`;
-  return layout({ title: g.title, path: `/guides/${g.slug}/`, body, description: g.description, schema: { '@context': 'https://schema.org', '@type': 'Article', headline: g.title, description: g.description, dateModified: generatedAt } });
+  return layout({ title: g.title, path: `/guides/${g.slug}/`, body, description: g.description, ogType: 'article', schema: [{ '@type': 'Article', headline: g.title, description: g.description, dateModified: generatedAt, image: abs('/og.png'), author: { '@type': 'Organization', name: cfg.name, url: abs('/') }, publisher: { '@type': 'Organization', name: cfg.name, logo: { '@type': 'ImageObject', url: abs('/logo.png') } }, mainEntityOfPage: abs(`/guides/${g.slug}/`) }, breadcrumbs([['/', 'Home'], ['/guides/', 'Guides'], [`/guides/${g.slug}/`, g.title]])] });
 }
 
 function getStarted() {
@@ -664,10 +777,93 @@ function feedXml() {
 }
 const pagesForSitemap = [];
 const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#17140f"/><rect x="6" y="9" width="4" height="15" fill="#f4efe4"/><rect x="11.5" y="6" width="4" height="18" fill="#ff4f1f"/><rect x="17" y="10" width="4" height="14" fill="#f4efe4"/><rect x="22" y="8" width="4" height="16" fill="#f4efe4" transform="rotate(12 24 16)"/><rect x="5" y="24" width="22" height="2.5" fill="#f4efe4"/></svg>`;
-const og = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#f4efe4"/><text x="80" y="300" font-family="Georgia,serif" font-size="110" fill="#17140f">Teach your AI</text><text x="80" y="420" font-family="Georgia,serif" font-style="italic" font-size="110" fill="#ff4f1f">new tricks.</text><text x="80" y="540" font-family="monospace" font-size="34" fill="#4a443a">${esc(cfg.name)} · ${skills.length} open-source agent skills</text></svg>`;
+// ---------- social cards (Open Graph PNGs, rendered with the site's own fonts) ----------
+const FONT_FILES = fs.readdirSync(path.join(ROOT, 'fonts')).filter(f => f.endsWith('.ttf')).map(f => path.join(ROOT, 'fonts', f));
+function wrapText(text, perLine, maxLines) {
+  const lines = [];
+  for (const w of String(text).split(/\s+/)) {
+    const last = lines.at(-1);
+    if (last && `${last} ${w}`.length <= perLine) lines[lines.length - 1] = `${last} ${w}`;
+    else lines.push(w);
+  }
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = `${lines[maxLines - 1].replace(/[\s.,;:]*\S{0,3}$/, '')}…`; }
+  return lines;
+}
+function ogSvg({ kicker, title, italic = '', foot, score }) {
+  // Instrument Serif runs ~0.37em per character; the title block sits between the kicker (y≈190) and the footer (y≈500).
+  let size = title.length > 44 ? 88 : title.length > 26 ? 104 : 124;
+  let lines;
+  for (;;) {
+    lines = wrapText(title, Math.floor(1040 / (size * 0.4)), 3);
+    if (italic) lines.push(`\u0000${italic}`);
+    if (lines.length * size * 1.02 <= 300 || size <= 64) break;
+    size -= 8;
+  }
+  const y0 = 196 + size * 0.95 + 14;
+  const mark = `<g transform="translate(80 72)"><rect x="0" y="9" width="9" height="34" fill="#f4efe4"/><rect x="13" y="0" width="9" height="43" fill="#ff4f1f"/><rect x="26" y="11" width="9" height="32" fill="#f4efe4"/><rect x="40" y="6" width="9" height="37" fill="#f4efe4" transform="rotate(12 44 25)"/><rect x="-2" y="44" width="54" height="5" fill="#f4efe4"/></g>`;
+  const tone = score >= 80 ? '#5fb88f' : score >= 60 ? '#e0b453' : '#ff8a4c';
+  const stampSvg = score == null ? '' : `<g transform="translate(1040 112)"><circle r="62" fill="none" stroke="${tone}" stroke-width="5"/><circle r="52" fill="none" stroke="${tone}" stroke-width="2"/><text y="14" text-anchor="middle" font-family="Instrument Serif" font-size="58" fill="${tone}">${score}</text><text y="40" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="${tone}" letter-spacing="2">TRUST</text></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#17140f"/><rect x="0" y="600" width="1200" height="30" fill="#ff4f1f"/>
+${mark}<text x="148" y="113" font-family="Instrument Serif" font-size="46" fill="#f4efe4">${esc(cfg.name)}</text>${stampSvg}
+<text x="80" y="196" font-family="JetBrains Mono" font-size="24" letter-spacing="3" fill="#ff4f1f">${esc(kicker.toUpperCase())}</text>
+${lines.map((l, i) => `<text x="80" y="${y0 + i * size * 1.02}" font-family="Instrument Serif" font-size="${size}" ${l.startsWith('\u0000') ? 'font-style="italic" fill="#ff4f1f"' : 'fill="#f4efe4"'}>${esc(l.replace('\u0000', ''))}</text>`).join('')}
+<text x="80" y="548" font-family="Schibsted Grotesk" font-size="30" fill="#b9b0a0">${esc(foot)}</text>
+</svg>`;
+}
+function png(rel, svg) {
+  const r = new Resvg(svg, { font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: 'Schibsted Grotesk' } });
+  const file = path.join(DIST, rel);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, r.render().asPng());
+}
+function renderOgImages() {
+  png('og.png', ogSvg({ kicker: `${n(skills.length)} free AI skills`, title: 'Teach your AI', italic: 'new tricks.', foot: 'For Claude, ChatGPT, Codex, Cursor and Copilot' }));
+  png('logo.png', `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32">${favicon.replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>`);
+  for (const c of usedCats) png(`og/categories/${c}.png`, ogSvg({ kicker: `${plural(byCat[c].length, 'skill')} · ${YEAR}`, title: `Best ${CATS[c].label}`, italic: 'AI skills', foot: 'Free for Claude, ChatGPT, Codex and Cursor' }));
+  for (const s of skills) png(`og/skills/${s.slug}.png`, ogSvg({ kicker: `№ ${s.no} · ${CATS[s.category].label}`, title: s.name, foot: `Free AI skill · ${s.license} · by ${s.author}`.slice(0, 64), score: s.trust.score }));
+}
+
+// ---------- crawler & AI-search files ----------
+// Search and answer engines are welcome; the ZIPs and JSON blobs are not useful to index.
+const AI_BOTS = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Amazonbot', 'meta-externalagent', 'DuckAssistBot', 'MistralAI-User', 'cohere-ai'];
+function robotsTxt() {
+  const rules = `Allow: /\nDisallow: ${u('/zips/')}\nDisallow: ${u('/bundles/')}*.zip\nDisallow: ${u('/data/')}\n`;
+  return `# ${cfg.name}: open-source AI skills. Search engines and AI assistants are welcome.\nUser-agent: *\n${rules}\n${AI_BOTS.map(b => `User-agent: ${b}`).join('\n')}\n${rules}\nSitemap: ${abs('/sitemap.xml')}\n`;
+}
+function llmsTxt() {
+  const top = c => mix([...byCat[c]].sort((a, b) => b.trust.score - a.trust.score)).slice(0, 8);
+  return `# ${cfg.name}
+
+> ${cfg.description} ${n(skills.length)} skills from ${sources.length} open-source GitHub repositories, plus ${n(mcp.length)} MCP servers. Every skill is free, open source (MIT, Apache-2.0 and similar), scanned for risky code, and refreshed several times a day.
+
+A skill is a folder with a SKILL.md file that teaches an AI agent one job. Each skill page has install steps for Claude.ai, Claude Desktop, Claude Code, Codex CLI, GitHub Copilot, Cursor, Gemini CLI and ChatGPT, a ZIP download, and the raw instructions at \`/skills/<slug>/SKILL.md\`.
+
+## Start here
+- [What are AI skills?](${abs('/guides/what-are-skills/')}): plain-English introduction
+- [Install skills without code](${abs('/guides/install-without-code/')}): Claude.ai and Claude Desktop
+- [Get started wizard](${abs('/get-started/')}): step-by-step for each AI tool
+- [All skills](${abs('/skills/')}): searchable library
+- [Full skill list for LLMs](${abs('/llms-full.txt')}): every skill with a one-line summary
+
+## Categories
+${usedCats.map(c => `- [${CATS[c].label}](${abs(`/categories/${c}/`)}): ${byCat[c].length} skills. ${CATS[c].blurb}`).join('\n')}
+
+${usedCats.map(c => `## Top ${CATS[c].label} skills\n${top(c).map(s => `- [${s.name}](${abs(`/skills/${s.slug}/`)}): ${clip(summary(s), 160)}`).join('\n')}`).join('\n\n')}
+
+## Optional
+- [Supported agents](${abs('/agents/')})
+- [MCP servers](${abs('/mcp/')})
+- [How we scan skills](${abs('/security/')})
+- [Changelog](${abs('/whats-new/')})
+`;
+}
+function llmsFullTxt() {
+  return `# ${cfg.name}: full skill index\n\n> ${n(skills.length)} free, open-source AI agent skills. Updated ${generatedAt}. Raw instructions for any skill: ${abs('/skills/<slug>/SKILL.md')}\n\n${usedCats.map(c => `## ${CATS[c].label}\n${[...byCat[c]].sort((a, b) => b.trust.score - a.trust.score).map(s => `- [${s.name}](${abs(`/skills/${s.slug}/`)}) (${s.license}, trust ${s.trust.score}/100): ${clip(summary(s), 220)}`).join('\n')}`).join('\n\n')}\n`;
+}
 
 // ---------- build ----------
-function emit(rel, html) { write(rel, html); if (rel.endsWith('index.html')) pagesForSitemap.push(`/${rel.replace(/index\.html$/, '')}`); }
+function emit(rel, html, lastmod = generatedAt) { write(rel, html); if (rel.endsWith('index.html')) pagesForSitemap.push([`/${rel.replace(/index\.html$/, '')}`, lastmod]); }
 
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(DIST, { recursive: true });
@@ -675,7 +871,11 @@ fs.cpSync(path.join(ROOT, 'src'), path.join(DIST, 'assets'), { recursive: true }
 
 emit('index.html', home());
 emit('skills/index.html', skillsIndex());
-for (const s of skills) emit(`skills/${s.slug}/index.html`, skillPage(s));
+for (const s of skills) {
+  emit(`skills/${s.slug}/index.html`, skillPage(s), s.updatedAt);
+  // Raw instructions for AI crawlers and agents that prefer Markdown over HTML.
+  write(`skills/${s.slug}/SKILL.md`, `<!-- ${s.name} · ${s.license} · by ${s.author} · source: ${s.sourceUrl} · mirrored by ${cfg.name}: ${abs(`/skills/${s.slug}/`)} -->\n${s.body}`);
+}
 emit('categories/index.html', categoriesIndex());
 for (const c of usedCats) emit(`categories/${c}/index.html`, categoryPage(c));
 emit('collections/index.html', collectionsIndex());
@@ -705,9 +905,12 @@ write('data/mcp.json', JSON.stringify(mcp.map(m => [m.title, m.name, m.descripti
 
 write('feed.xml', feedXml());
 write('favicon.svg', favicon);
-write('og.svg', og);
-write('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${abs('/sitemap.xml')}\n`);
-write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pagesForSitemap.map(p => `<url><loc>${abs(p)}</loc><lastmod>${generatedAt.slice(0, 10)}</lastmod></url>`).join('')}</urlset>`);
+renderOgImages();
+write('robots.txt', robotsTxt());
+write('llms.txt', llmsTxt());
+write('llms-full.txt', llmsFullTxt());
+if (cfg.seo?.indexNowKey) write(`${cfg.seo.indexNowKey}.txt`, cfg.seo.indexNowKey);
+write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pagesForSitemap.map(([p, m]) => `<url><loc>${abs(p)}</loc><lastmod>${new Date(m || generatedAt).toISOString()}</lastmod></url>`).join('')}</urlset>`);
 if (adsLive) write('ads.txt', `google.com, ${cfg.ads.adsenseClient.replace('ca-', '')}, DIRECT, f08c47fec0942fa0\n`);
 if (cfg.siteUrl && !/example\.com/.test(cfg.siteUrl) && !BASE) write('CNAME', new URL(cfg.siteUrl).host);
 write('.nojekyll', '');
